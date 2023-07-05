@@ -12,7 +12,7 @@ The backend is in Golang using gqlgen and gorm, and the frontend is in React usi
 
 ## Features
 - GraphQL API
-- Websocket support for live updates - TODO
+- Websocket support for live updates
 - Formula support
 - Markdown support
 
