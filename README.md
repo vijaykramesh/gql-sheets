@@ -4,7 +4,7 @@
 
 ## About
 
-<img width="1609" alt="Screen Shot 2023-07-04 at 11 34 55 PM" src="https://github.com/vijaykramesh/gql-sheets/assets/556288/953877a4-d8f1-4d8e-b9d0-9bb1209902de">
+![gql-sheets-demo](https://github.com/vijaykramesh/gql-sheets/assets/556288/4b634eb1-ae53-4eb7-b9d2-06b91251a1b8)
 
 This is a small project to power a web-based spreadsheet application.
 
