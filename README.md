@@ -1,5 +1,5 @@
 # gql-sheets
-![Coverage](https://img.shields.io/badge/Coverage-51.4%25-yellow)
+![Coverage](https://img.shields.io/badge/Coverage-49.3%25-yellow)
 
 
 ## About
@@ -12,7 +12,7 @@ The backend is in Golang using gqlgen and gorm, and the frontend is in React usi
 
 ## Features
 - GraphQL API
-- Websocket support for live updates - TODO
+- Websocket support for live updates
 - Formula support
 - Markdown support
 

@@ -109,6 +109,16 @@ export type Spreadsheet = {
   rowCount: Scalars['Int']['output'];
 };
 
+export type Subscription = {
+  __typename?: 'Subscription';
+  getCellsBySpreadsheetId: Array<Cell>;
+};
+
+
+export type SubscriptionGetCellsBySpreadsheetIdArgs = {
+  spreadsheetId: Scalars['String']['input'];
+};
+
 export type UpdateCell = {
   rawValue: Scalars['String']['input'];
 };

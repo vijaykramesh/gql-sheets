@@ -24,6 +24,9 @@ func CreateContext(args *CustomContext, next http.Handler) http.Handler {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "*")
 		w.Header().Set("Access-Control-Allow-Headers", "*")
+		w.Header().Set("Allow-Credentials", "true")
+		w.Header().Set("Check-Origin", "true")
+
 		next.ServeHTTP(w, requestWithCtx)
 	})
 }

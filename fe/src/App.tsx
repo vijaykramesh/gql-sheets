@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, FunctionComponent } from 'react';
-import { useQuery, useMutation } from '@apollo/client';
+import {useQuery, useMutation, useSubscription} from '@apollo/client';
 import { AgGridReact } from 'ag-grid-react';
 import { ColumnApi, GridReadyEvent, ModuleRegistry, CellEditingStartedEvent, CellEditingStoppedEvent, CellValueChangedEvent, ColDef } from 'ag-grid-community';
 
@@ -7,7 +7,7 @@ import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
 
 import {
-    GET_CELLS_BY_SPREADSHEET_ID,
+    GET_CELLS_BY_SPREADSHEET_ID, GET_CELLS_BY_SPREADSHEET_ID_SUBSCRIPTION,
     GET_SPREADSHEET,
     UPDATE_CELL_BY_SPREADSHEET_ID_COLUMN_AND_ROW,
     UPDATE_SPREADSHEET
@@ -44,8 +44,17 @@ const App: FunctionComponent = (): React.ReactElement => {
         }
     );
 
+    const {data: dataSubscription, loading: loadingSubscription} = useSubscription(
+
+        GET_CELLS_BY_SPREADSHEET_ID_SUBSCRIPTION,
+
+        { variables: { spreadsheetId: "1" } } // todo get spreadsheet id from somewhere
+
+    );
+
     const containerStyle = useMemo(() => ({ width: '100%', height: '100%' }), []);
     const gridStyle = useMemo(() => ({ height: '800px', width: '90%', padding: '50px' }), []);
+    const [editModeColumnAndRow, setEditModeColumnAndRow] = useState<{column: string, row: number} | null>(null);
     const [rowData, setRowData] = useState<any[]>();
     const [columnDefs, setColumnDefs] = useState<ColDef[]>([
         { headerName: '', field: 'rowIndex', width: 50, sortable: false, resizable: false },
@@ -61,9 +70,10 @@ const App: FunctionComponent = (): React.ReactElement => {
         };
     }, [data]);
 
+
     const onGridReady = useCallback((params: GridReadyEvent) => {
         if (data && dataSpreadsheet) {
-            const preparedRowData = convertCellsToRowData(data.getCellsBySpreadsheetId, dataSpreadsheet.getSpreadsheet.rowCount);
+            const preparedRowData = convertCellsToRowData(data.getCellsBySpreadsheetId, dataSpreadsheet.getSpreadsheet.rowCount, editModeColumnAndRow);
             setRowData(preparedRowData);
         } else {
             console.log('data is null');
@@ -87,16 +97,26 @@ const App: FunctionComponent = (): React.ReactElement => {
         } else {
             console.log('dataSpreadsheet is null');
         }
-    }, [data, dataSpreadsheet]);
+    }, [data, dataSpreadsheet, editModeColumnAndRow]);
 
     useEffect(() => {
-        if (data && dataSpreadsheet) {
-            const preparedRowData = convertCellsToRowData(data.getCellsBySpreadsheetId, dataSpreadsheet.getSpreadsheet.rowCount);
+        if (editModeColumnAndRow == null && data && dataSpreadsheet) {
+            const preparedRowData = convertCellsToRowData(data.getCellsBySpreadsheetId, dataSpreadsheet.getSpreadsheet.rowCount, editModeColumnAndRow);
             setRowData(preparedRowData);
         } else {
             console.log('data is null');
         }
-    }, [data, dataSpreadsheet]);
+    }, [data, dataSpreadsheet, editModeColumnAndRow]);
+
+    useEffect(() => {
+        if (editModeColumnAndRow == null && dataSubscription && dataSpreadsheet && dataSpreadsheet.getSpreadsheet) {
+            const preparedRowData = convertCellsToRowData(dataSubscription.getCellsBySpreadsheetId, dataSpreadsheet.getSpreadsheet.rowCount, editModeColumnAndRow);
+            setRowData(preparedRowData);
+        } else {
+            console.log('data is null');
+        }
+    }, [dataSubscription, dataSpreadsheet, editModeColumnAndRow]);
+
 
     useEffect(() => {
         document.title = 'gql-sheets';
@@ -108,14 +128,19 @@ const App: FunctionComponent = (): React.ReactElement => {
         const columnCode = column.getColId();
         if (event.data && event.data[columnCode]){
             event.data[columnCode].editMode = 2;
+            if (rowIndex !== null && rowIndex >= 0 && columnCode) {
+                setEditModeColumnAndRow({column: columnCode, row: rowIndex})
+            }
         }
     };
 
     const onCellEditingStopped = (event: CellEditingStoppedEvent) => {
         const { rowIndex, column } = event;
         const columnCode = column.getColId();
+
         if (columnCode && event.data && event.data[columnCode]){
             event.data[columnCode].editMode = 0;
+
         }
         if (!event.valueChanged)
             return;
@@ -156,6 +181,7 @@ const App: FunctionComponent = (): React.ReactElement => {
                 rawValue:  event.newValue,
             },
         });
+        setEditModeColumnAndRow(null)
 
     };
 
