@@ -60,7 +60,7 @@ type ComplexityRoot struct {
 		CreateSpreadsheet                     func(childComplexity int, input model.NewSpreadsheet) int
 		UpdateCell                            func(childComplexity int, id string, input model.UpdateCell) int
 		UpdateCellBySpreadsheetIDColumnAndRow func(childComplexity int, spreadsheetID string, columnIndex int, rowIndex int, input model.UpdateCell) int
-		UpdateSpreadsheet                     func(childComplexity int, id string, input model.NewSpreadsheet) int
+		UpdateSpreadsheet                     func(childComplexity int, id string, input model.UpdateSpreadsheet) int
 	}
 
 	Query struct {
@@ -88,7 +88,7 @@ type MutationResolver interface {
 	UpdateCell(ctx context.Context, id string, input model.UpdateCell) (*model.Cell, error)
 	UpdateCellBySpreadsheetIDColumnAndRow(ctx context.Context, spreadsheetID string, columnIndex int, rowIndex int, input model.UpdateCell) (*model.Cell, error)
 	CreateSpreadsheet(ctx context.Context, input model.NewSpreadsheet) (*model.Spreadsheet, error)
-	UpdateSpreadsheet(ctx context.Context, id string, input model.NewSpreadsheet) (*model.Spreadsheet, error)
+	UpdateSpreadsheet(ctx context.Context, id string, input model.UpdateSpreadsheet) (*model.Spreadsheet, error)
 }
 type QueryResolver interface {
 	Cells(ctx context.Context) ([]*model.Cell, error)
@@ -216,7 +216,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateSpreadsheet(childComplexity, args["id"].(string), args["input"].(model.NewSpreadsheet)), true
+		return e.complexity.Mutation.UpdateSpreadsheet(childComplexity, args["id"].(string), args["input"].(model.UpdateSpreadsheet)), true
 
 	case "Query.cells":
 		if e.complexity.Query.Cells == nil {
@@ -307,6 +307,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputNewCell,
 		ec.unmarshalInputNewSpreadsheet,
 		ec.unmarshalInputUpdateCell,
+		ec.unmarshalInputUpdateSpreadsheet,
 	)
 	first := true
 
@@ -456,6 +457,11 @@ input NewSpreadsheet {
     columnCount: Int!
 }
 
+input UpdateSpreadsheet {
+    name: String
+    rowCount: Int
+    columnCount: Int
+}
 
 extend type Query {
     spreadsheets: [Spreadsheet!]!
@@ -465,7 +471,7 @@ extend type Query {
 
 extend type Mutation {
     createSpreadsheet(input: NewSpreadsheet!): Spreadsheet!
-    updateSpreadsheet(id: String!, input: NewSpreadsheet!): Spreadsheet!
+    updateSpreadsheet(id: String!, input: UpdateSpreadsheet!): Spreadsheet!
 }
 `, BuiltIn: false},
 }
@@ -583,10 +589,10 @@ func (ec *executionContext) field_Mutation_updateSpreadsheet_args(ctx context.Co
 		}
 	}
 	args["id"] = arg0
-	var arg1 model.NewSpreadsheet
+	var arg1 model.UpdateSpreadsheet
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg1, err = ec.unmarshalNNewSpreadsheet2githubᚗcomᚋvijaykrameshᚋgqlᚑsheetsᚋgraphᚋmodelᚐNewSpreadsheet(ctx, tmp)
+		arg1, err = ec.unmarshalNUpdateSpreadsheet2githubᚗcomᚋvijaykrameshᚋgqlᚑsheetsᚋgraphᚋmodelᚐUpdateSpreadsheet(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1250,7 +1256,7 @@ func (ec *executionContext) _Mutation_updateSpreadsheet(ctx context.Context, fie
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateSpreadsheet(rctx, fc.Args["id"].(string), fc.Args["input"].(model.NewSpreadsheet))
+		return ec.resolvers.Mutation().UpdateSpreadsheet(rctx, fc.Args["id"].(string), fc.Args["input"].(model.UpdateSpreadsheet))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3826,6 +3832,53 @@ func (ec *executionContext) unmarshalInputUpdateCell(ctx context.Context, obj in
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputUpdateSpreadsheet(ctx context.Context, obj interface{}) (model.UpdateSpreadsheet, error) {
+	var it model.UpdateSpreadsheet
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name", "rowCount", "columnCount"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "rowCount":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("rowCount"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RowCount = data
+		case "columnCount":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("columnCount"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ColumnCount = data
+		}
+	}
+
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -4781,6 +4834,11 @@ func (ec *executionContext) unmarshalNUpdateCell2githubᚗcomᚋvijaykrameshᚋg
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNUpdateSpreadsheet2githubᚗcomᚋvijaykrameshᚋgqlᚑsheetsᚋgraphᚋmodelᚐUpdateSpreadsheet(ctx context.Context, v interface{}) (model.UpdateSpreadsheet, error) {
+	res, err := ec.unmarshalInputUpdateSpreadsheet(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
 	return ec.___Directive(ctx, sel, &v)
 }
@@ -5057,6 +5115,22 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 		return graphql.Null
 	}
 	res := graphql.MarshalBoolean(*v)
+	return res
+}
+
+func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalInt(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.SelectionSet, v *int) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	res := graphql.MarshalInt(*v)
 	return res
 }
 

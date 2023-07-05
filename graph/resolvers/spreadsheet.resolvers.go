@@ -30,16 +30,24 @@ func (r *mutationResolver) CreateSpreadsheet(ctx context.Context, input model.Ne
 }
 
 // UpdateSpreadsheet is the resolver for the updateSpreadsheet field.
-func (r *mutationResolver) UpdateSpreadsheet(ctx context.Context, id string, input model.NewSpreadsheet) (*model.Spreadsheet, error) {
+func (r *mutationResolver) UpdateSpreadsheet(ctx context.Context, id string, input model.UpdateSpreadsheet) (*model.Spreadsheet, error) {
 	context := common.GetContext(ctx)
 	var spreadsheet model.Spreadsheet
 	err := context.Database.Where("id = ?", id).First(&spreadsheet).Error
 	if err != nil {
 		return nil, fmt.Errorf("error getting spreadsheet: %v", err)
 	}
-	spreadsheet.Name = input.Name
-	spreadsheet.RowCount = input.RowCount
-	spreadsheet.ColumnCount = input.ColumnCount
+	if input.Name != nil {
+		spreadsheet.Name = *input.Name
+	}
+	if input.RowCount != nil {
+		spreadsheet.RowCount = *input.RowCount
+	}
+	if input.ColumnCount != nil {
+		spreadsheet.ColumnCount = *input.ColumnCount
+	}
+
+	// TODO: delete any cells that are out of bounds
 
 	err = context.Database.Save(&spreadsheet).Error
 	if err != nil {

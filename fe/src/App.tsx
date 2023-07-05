@@ -6,7 +6,12 @@ import { ColumnApi, GridReadyEvent, ModuleRegistry, CellEditingStartedEvent, Cel
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
 
-import { GET_CELLS_BY_SPREADSHEET_ID, GET_SPREADSHEET, UPDATE_CELL_BY_SPREADSHEET_ID_COLUMN_AND_ROW } from './graphqlQueries';
+import {
+    GET_CELLS_BY_SPREADSHEET_ID,
+    GET_SPREADSHEET,
+    UPDATE_CELL_BY_SPREADSHEET_ID_COLUMN_AND_ROW,
+    UPDATE_SPREADSHEET
+} from './graphqlQueries';
 import {Cell} from "./__generated__/graphql";
 import {ClientSideRowModelModule} from "@ag-grid-community/client-side-row-model";
 import './App.css';
@@ -32,6 +37,13 @@ const App: FunctionComponent = (): React.ReactElement => {
         }
     );
 
+    const [updateSpreadsheet, { data: dataUpdateSpreadsheet, loading: loadingUpdateSpreadsheet, error: errorUpdateSpreadsheet }] = useMutation(
+        UPDATE_SPREADSHEET,
+        {
+            refetchQueries: [{query: GET_SPREADSHEET}, {query: GET_CELLS_BY_SPREADSHEET_ID}],
+        }
+    );
+
     const containerStyle = useMemo(() => ({ width: '100%', height: '100%' }), []);
     const gridStyle = useMemo(() => ({ height: '500px', width: '90%', padding: '50px' }), []);
     const [rowData, setRowData] = useState<any[]>();
@@ -50,8 +62,8 @@ const App: FunctionComponent = (): React.ReactElement => {
     }, [data]);
 
     const onGridReady = useCallback((params: GridReadyEvent) => {
-        if (data) {
-            const preparedRowData = convertCellsToRowData(data.getCellsBySpreadsheetId);
+        if (data && dataSpreadsheet) {
+            const preparedRowData = convertCellsToRowData(data.getCellsBySpreadsheetId, dataSpreadsheet.getSpreadsheet.rowCount);
             setRowData(preparedRowData);
         } else {
             console.log('data is null');
@@ -78,26 +90,14 @@ const App: FunctionComponent = (): React.ReactElement => {
     }, [data, dataSpreadsheet]);
 
     useEffect(() => {
-        if (data) {
-            const preparedRowData = convertCellsToRowData(data.getCellsBySpreadsheetId);
+        if (data && dataSpreadsheet) {
+            const preparedRowData = convertCellsToRowData(data.getCellsBySpreadsheetId, dataSpreadsheet.getSpreadsheet.rowCount);
             setRowData(preparedRowData);
         } else {
             console.log('data is null');
         }
-    }, [data]);
+    }, [data, dataSpreadsheet]);
 
-    const onCellValueChanged = (event: CellValueChangedEvent) => {
-        if (event.colDef.field) {
-            updateCell({
-                variables: {
-                    spreadsheetId: '1',
-                    columnIndex: event.column.getInstanceId() - 1,
-                    rowIndex: event.node.rowIndex || 0,
-                    rawValue: event.data[event.colDef.field] ? event.data[event.colDef.field].rawValue : 'new value',
-                },
-            });
-        }
-    };
 
     const onCellEditingStarted = (event: CellEditingStartedEvent) => {
         const { rowIndex, column } = event;
@@ -113,8 +113,47 @@ const App: FunctionComponent = (): React.ReactElement => {
 
     const onCellEditingStopped = (event: CellEditingStoppedEvent) => {
         const { rowIndex, column } = event;
+
+        // if they have edited a cell in a new row or column we have to update the sheet first
+        // the UX here is cludgy, but it's a demo
+        if (dataSpreadsheet.getSpreadsheet.rowCount < (rowIndex||0) + 1 || dataSpreadsheet.getSpreadsheet.columnCount < column.getInstanceId()) {
+            const newRowCount = Math.max((rowIndex||0) + 1, dataSpreadsheet.getSpreadsheet.rowCount);
+            const newColumnCount = Math.max(column.getInstanceId(), dataSpreadsheet.getSpreadsheet.columnCount);
+            updateSpreadsheet({variables: {
+                    id: dataSpreadsheet.getSpreadsheet.id,
+                    rowCount: newRowCount,
+                    columnCount: newColumnCount
+                }})
+
+            if (newColumnCount > dataSpreadsheet.getSpreadsheet.columnCount) {
+                const columnDefs = generateColumnFields(newColumnCount);
+                const firstColumn = [
+                    {
+                        headerName: '',
+                        field: 'rowIndex',
+                        width: 50,
+                        sortable: false,
+                        resizable: false,
+                        selectable: false,
+                        clickable: false,
+                        editable: false,
+                    },
+                ];
+                columnDefs.unshift(...firstColumn);
+                setColumnDefs(columnDefs);
+            }
+        }
+        updateCell({
+            variables: {
+                spreadsheetId: dataSpreadsheet.getSpreadsheet.id,
+                columnIndex: event.column.getInstanceId() - 1,
+                rowIndex: event.node.rowIndex || 0,
+                rawValue:  event.newValue,
+            },
+        });
         const columnCode = column.getColId();
-        if (event.data && event.data[columnCode]) event.data[columnCode].editMode = 1;
+        console.log("EventCellEditingStopped,", event);
+        if (columnCode && event.data && event.data[columnCode]) event.data[columnCode].editMode = 1;
     };
 
     const gridOptions = {
@@ -139,7 +178,6 @@ const App: FunctionComponent = (): React.ReactElement => {
                         columnDefs={columnDefs}
                         defaultColDef={defaultColDef}
                         onGridReady={onGridReady}
-                        onCellValueChanged={onCellValueChanged}
                     ></AgGridReact>
                 </div>
             </div>
