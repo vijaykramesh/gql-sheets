@@ -1,5 +1,5 @@
 # gql-sheets
-![Coverage](https://img.shields.io/badge/Coverage-51.3%25-yellow)
+![Coverage](https://img.shields.io/badge/Coverage-51.4%25-yellow)
 
 
 ## About
@@ -9,6 +9,11 @@
 This is a small project to power a web-based spreadsheet application.
 
 The backend is in Golang using gqlgen and gorm, and the frontend is in React using Apollo Client.
+
+## Supported Formulas
+- `=A1` reference lookup
+- `=SUM(A1:A5)` sum of range
+- `=AVERAGE(A1:A5)` average of range
 
 ## Local Setup
 
