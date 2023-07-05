@@ -45,7 +45,7 @@ const App: FunctionComponent = (): React.ReactElement => {
     );
 
     const containerStyle = useMemo(() => ({ width: '100%', height: '100%' }), []);
-    const gridStyle = useMemo(() => ({ height: '500px', width: '90%', padding: '50px' }), []);
+    const gridStyle = useMemo(() => ({ height: '800px', width: '90%', padding: '50px' }), []);
     const [rowData, setRowData] = useState<any[]>();
     const [columnDefs, setColumnDefs] = useState<ColDef[]>([
         { headerName: '', field: 'rowIndex', width: 50, sortable: false, resizable: false },
