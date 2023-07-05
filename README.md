@@ -10,6 +10,12 @@ This is a small project to power a web-based spreadsheet application.
 
 The backend is in Golang using gqlgen and gorm, and the frontend is in React using Apollo Client.
 
+## Features
+- GraphQL API
+- Websocket support for live updates - TODO
+- Formula support
+- Markdown support
+
 ## Supported Formulas
 - `=A1` reference lookup
 - `=SUM(A1:A5)` sum of range
