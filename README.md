@@ -1,4 +1,5 @@
 # gql-sheets
+![Coverage](https://img.shields.io/badge/Coverage-47.7%25-yellow)
 
 
 ## About
