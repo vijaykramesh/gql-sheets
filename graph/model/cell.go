@@ -20,7 +20,7 @@ type Cell struct {
 }
 
 func (c *Cell) parseRawValue() ([]efp.Token, error) {
-	if c.RawValue[0] != '=' {
+	if len(c.RawValue) > 0 && c.RawValue[0] != '=' {
 		return nil, errors.New("raw value does not start with =")
 	}
 	ps := efp.ExcelParser()
@@ -30,7 +30,7 @@ func (c *Cell) parseRawValue() ([]efp.Token, error) {
 
 func (c *Cell) ComputeValueFromRaw(otherCells []Cell) (string, error) {
 	// if c.RawValue starts with =, then it is a formula or reference
-	if c.RawValue[0] == '=' {
+	if len(c.RawValue) > 0 && c.RawValue[0] == '=' {
 		tokens, err := c.parseRawValue()
 		if err != nil {
 			return "", err

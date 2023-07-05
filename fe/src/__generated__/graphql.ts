@@ -1,5 +1,4 @@
 /* eslint-disable */
-import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/core';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
@@ -62,7 +61,7 @@ export type MutationUpdateCellBySpreadsheetIdColumnAndRowArgs = {
 
 export type MutationUpdateSpreadsheetArgs = {
   id: Scalars['String']['input'];
-  input: NewSpreadsheet;
+  input: UpdateSpreadsheet;
 };
 
 export type NewCell = {
@@ -114,36 +113,8 @@ export type UpdateCell = {
   rawValue: Scalars['String']['input'];
 };
 
-export type GetCellsBySpreadsheetIdQueryVariables = Exact<{ [key: string]: never; }>;
-
-
-export type GetCellsBySpreadsheetIdQuery = { __typename?: 'Query', getCellsBySpreadsheetId: Array<{ __typename?: 'Cell', id: string, rowIndex: number, columnIndex: number, rawValue: string, computedValue?: string | null, spreadsheet: { __typename?: 'Spreadsheet', name: string } }> };
-
-export type GetSpreadsheetQueryVariables = Exact<{ [key: string]: never; }>;
-
-
-export type GetSpreadsheetQuery = { __typename?: 'Query', getSpreadsheet: { __typename?: 'Spreadsheet', name: string, rowCount: number, columnCount: number } };
-
-export type UpdateCellMutationVariables = Exact<{
-  cellId: Scalars['String']['input'];
-  rawValue: Scalars['String']['input'];
-}>;
-
-
-export type UpdateCellMutation = { __typename?: 'Mutation', updateCell: { __typename?: 'Cell', id: string, rawValue: string } };
-
-export type UpdateCellBySpreadsheetIdColumnAndRowMutationVariables = Exact<{
-  spreadsheetId: Scalars['String']['input'];
-  columnIndex: Scalars['Int']['input'];
-  rowIndex: Scalars['Int']['input'];
-  rawValue: Scalars['String']['input'];
-}>;
-
-
-export type UpdateCellBySpreadsheetIdColumnAndRowMutation = { __typename?: 'Mutation', updateCellBySpreadsheetIdColumnAndRow: { __typename?: 'Cell', id: string, rawValue: string } };
-
-
-export const GetCellsBySpreadsheetIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getCellsBySpreadsheetId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getCellsBySpreadsheetId"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"spreadsheetId"},"value":{"kind":"StringValue","value":"1","block":false}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"spreadsheet"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"rowIndex"}},{"kind":"Field","name":{"kind":"Name","value":"columnIndex"}},{"kind":"Field","name":{"kind":"Name","value":"rawValue"}},{"kind":"Field","name":{"kind":"Name","value":"computedValue"}}]}}]}}]} as unknown as DocumentNode<GetCellsBySpreadsheetIdQuery, GetCellsBySpreadsheetIdQueryVariables>;
-export const GetSpreadsheetDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getSpreadsheet"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getSpreadsheet"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"StringValue","value":"1","block":false}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"rowCount"}},{"kind":"Field","name":{"kind":"Name","value":"columnCount"}}]}}]}}]} as unknown as DocumentNode<GetSpreadsheetQuery, GetSpreadsheetQueryVariables>;
-export const UpdateCellDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateCell"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"cellId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"rawValue"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateCell"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"cellId"}}},{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"rawValue"},"value":{"kind":"Variable","name":{"kind":"Name","value":"rawValue"}}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"rawValue"}}]}}]}}]} as unknown as DocumentNode<UpdateCellMutation, UpdateCellMutationVariables>;
-export const UpdateCellBySpreadsheetIdColumnAndRowDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateCellBySpreadsheetIdColumnAndRow"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"spreadsheetId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columnIndex"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"rowIndex"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"rawValue"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateCellBySpreadsheetIdColumnAndRow"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"spreadsheetId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"spreadsheetId"}}},{"kind":"Argument","name":{"kind":"Name","value":"columnIndex"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnIndex"}}},{"kind":"Argument","name":{"kind":"Name","value":"rowIndex"},"value":{"kind":"Variable","name":{"kind":"Name","value":"rowIndex"}}},{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"rawValue"},"value":{"kind":"Variable","name":{"kind":"Name","value":"rawValue"}}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"rawValue"}}]}}]}}]} as unknown as DocumentNode<UpdateCellBySpreadsheetIdColumnAndRowMutation, UpdateCellBySpreadsheetIdColumnAndRowMutationVariables>;
+export type UpdateSpreadsheet = {
+  columnCount?: InputMaybe<Scalars['Int']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  rowCount?: InputMaybe<Scalars['Int']['input']>;
+};

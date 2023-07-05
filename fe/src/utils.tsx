@@ -67,8 +67,8 @@ export function generateColumnFields(maxColumnIndex: number): ColDef[] {
 }
 
 export
-function convertCellsToRowData(data: Cell[]): { [key: string]: any }[] {
-    const maxRowIndex = Math.max(...data.map((cell) => cell.rowIndex));
+function convertCellsToRowData(data: Cell[], rowCount: number): { [key: string]: any }[] {
+    const maxRowIndex = Math.max(rowCount-1,Math.max(...data.map((cell) => cell.rowIndex)))
     const maxColumnIndex = Math.max(...data.map((cell) => cell.columnIndex));
 
     const result: { [key: string]: object }[] = [];

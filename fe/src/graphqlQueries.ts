@@ -16,6 +16,7 @@ export const GET_CELLS_BY_SPREADSHEET_ID = gql(/* GraphQL */ `
 export const GET_SPREADSHEET = gql(/* GraphQL */ `
     query getSpreadsheet {
         getSpreadsheet(id: "1") {
+            id
             name
             rowCount
             columnCount
@@ -37,6 +38,17 @@ export const UPDATE_CELL_BY_SPREADSHEET_ID_COLUMN_AND_ROW = gql`
         updateCellBySpreadsheetIdColumnAndRow(spreadsheetId: $spreadsheetId, columnIndex: $columnIndex, rowIndex: $rowIndex, input: { rawValue: $rawValue }) {
             id
             rawValue
+        }
+    }
+`;
+
+export const UPDATE_SPREADSHEET = gql`
+    mutation UpdateSpreadsheet($id: String!, $rowCount: Int!, $columnCount: Int!) {
+        updateSpreadsheet(id: $id, input: {  rowCount: $rowCount, columnCount: $columnCount }) {
+            id
+            name
+            rowCount
+            columnCount
         }
     }
 `;

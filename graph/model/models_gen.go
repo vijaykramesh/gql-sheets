@@ -18,3 +18,9 @@ type NewSpreadsheet struct {
 type UpdateCell struct {
 	RawValue string `json:"rawValue"`
 }
+
+type UpdateSpreadsheet struct {
+	Name        *string `json:"name,omitempty"`
+	RowCount    *int    `json:"rowCount,omitempty"`
+	ColumnCount *int    `json:"columnCount,omitempty"`
+}
