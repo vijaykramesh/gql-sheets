@@ -2,6 +2,7 @@ package model
 
 import (
 	"github.com/stretchr/testify/assert"
+	"github.com/xuri/efp"
 	"testing"
 )
 
@@ -214,4 +215,49 @@ func TestComputeValueFromRaw(t *testing.T) {
 			t.Errorf("Expected value: %s, but got: %s", c.RawValue, result)
 		}
 	})
+}
+
+func TestReferenceLookup(t *testing.T) {
+	tokens := []efp.Token{
+		{TValue: "A1"},
+	}
+
+	otherCells := []Cell{
+		{ColumnIndex: 0, RowIndex: 0, ComputedValue: "Value1"},
+		{ColumnIndex: 1, RowIndex: 1, ComputedValue: "Value2"},
+	}
+
+	result, err := referenceLookup(tokens, otherCells)
+	if err != nil {
+		t.Errorf("Error occurred: %s", err.Error())
+	}
+
+	expected := "Value1"
+	if result != expected {
+		t.Errorf("Expected result: %s, but got: %s", expected, result)
+	}
+}
+func TestSumRange(t *testing.T) {
+	tokens := []efp.Token{
+		{TType: "Function", TSubType: "Start", TValue: "SUM"},
+		{TType: "Operand", TSubType: "Range", TValue: "A1:A3"},
+		{TType: "Function", TSubType: "Stop", TValue: ""},
+	}
+
+	otherCells := []Cell{
+		{ColumnIndex: 0, RowIndex: 0, ComputedValue: "10"},
+		{ColumnIndex: 0, RowIndex: 1, ComputedValue: "20"},
+		{ColumnIndex: 0, RowIndex: 2, ComputedValue: "30"},
+		{ColumnIndex: 1, RowIndex: 3, ComputedValue: "40"},
+	}
+
+	result, err := sumRange(tokens, otherCells)
+	if err != nil {
+		t.Errorf("Error occurred: %s", err.Error())
+	}
+
+	expected := "60"
+	if result != expected {
+		t.Errorf("Expected result: %s, but got: %s", expected, result)
+	}
 }

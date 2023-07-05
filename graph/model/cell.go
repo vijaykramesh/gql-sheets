@@ -39,60 +39,77 @@ func (c *Cell) ComputeValueFromRaw(otherCells []Cell) (string, error) {
 
 		// =A4 style reference, lookup the computed value of the referenced cell
 		if len(tokens) == 1 && tokens[0].TType == "Operand" && tokens[0].TSubType == "Range" {
-			lookupCell := tokens[0].TValue
-			columnIndex, rowIndex, err := columnAndRowIndexFromCode(lookupCell)
-			if err != nil {
-				return "", err
+			computedValue, lookupErr := referenceLookup(tokens, otherCells)
+			if lookupErr != nil {
+				return "", lookupErr
 			}
-
-			var matchedCell *Cell
-			for _, cell := range otherCells {
-				if cell.ColumnIndex == columnIndex && cell.RowIndex == rowIndex {
-					matchedCell = &cell
-					break
-				}
-			}
-			if matchedCell == nil {
-				return "", fmt.Errorf("could not find cell %s", lookupCell)
-			}
-			return matchedCell.ComputedValue, nil
+			return computedValue, nil
 		}
-
 		// =SUM(A1:A3) style formula, compute the value
 		if len(tokens) == 3 && tokens[0].TType == "Function" && tokens[0].TSubType == "Start" && tokens[0].TValue == "SUM" && tokens[1].TType == "Operand" && tokens[1].TSubType == "Range" && tokens[2].TType == "Function" && tokens[2].TSubType == "Stop" && tokens[2].TValue == "" {
-			fmt.Println("SUM formula")
-			fmt.Println(tokens)
-			fmt.Println(tokens[1].TValue)
-			// split tokens[1].TValue on : to get start and end cell
-			startCell := strings.Split(tokens[1].TValue, ":")[0]
-			endCell := strings.Split(tokens[1].TValue, ":")[1]
-
-			startColumnIndex, startRowIndex, err := columnAndRowIndexFromCode(startCell)
-			if err != nil {
-				return "", err
+			computedValue, lookupErr := sumRange(tokens, otherCells)
+			if lookupErr != nil {
+				return "", lookupErr
 			}
-
-			endColumnIndex, endRowIndex, err := columnAndRowIndexFromCode(endCell)
-			if err != nil {
-				return "", err
-			}
-
-			var sum int64
-			for _, cell := range otherCells {
-				if cell.ColumnIndex >= startColumnIndex && cell.ColumnIndex <= endColumnIndex && cell.RowIndex >= startRowIndex && cell.RowIndex <= endRowIndex {
-					cellValue, err := strconv.ParseInt(cell.ComputedValue, 10, 64)
-					if err != nil {
-						return "", err
-					}
-					sum += cellValue
-				}
-			}
-			return strconv.FormatInt(sum, 10), nil
+			return computedValue, nil
 		}
+
 		return c.RawValue, nil
 	}
 	return c.RawValue, nil
 }
+
+func referenceLookup(tokens []efp.Token, otherCells []Cell) (string, error) {
+	lookupCell := tokens[0].TValue
+	columnIndex, rowIndex, err := columnAndRowIndexFromCode(lookupCell)
+	if err != nil {
+		return "", err
+	}
+
+	var matchedCell *Cell
+	for _, cell := range otherCells {
+		if cell.ColumnIndex == columnIndex && cell.RowIndex == rowIndex {
+			matchedCell = &cell
+			break
+		}
+	}
+	if matchedCell == nil {
+		return "", fmt.Errorf("could not find cell %s", lookupCell)
+	}
+	return matchedCell.ComputedValue, nil
+}
+
+func sumRange(tokens []efp.Token, otherCells []Cell) (string, error) {
+	fmt.Println("SUM formula")
+	fmt.Println(tokens)
+	fmt.Println(tokens[1].TValue)
+	// split tokens[1].TValue on : to get start and end cell
+	startCell := strings.Split(tokens[1].TValue, ":")[0]
+	endCell := strings.Split(tokens[1].TValue, ":")[1]
+
+	startColumnIndex, startRowIndex, err := columnAndRowIndexFromCode(startCell)
+	if err != nil {
+		return "", err
+	}
+
+	endColumnIndex, endRowIndex, err := columnAndRowIndexFromCode(endCell)
+	if err != nil {
+		return "", err
+	}
+
+	var sum int64
+	for _, cell := range otherCells {
+		if cell.ColumnIndex >= startColumnIndex && cell.ColumnIndex <= endColumnIndex && cell.RowIndex >= startRowIndex && cell.RowIndex <= endRowIndex {
+			cellValue, err := strconv.ParseInt(cell.ComputedValue, 10, 64)
+			if err != nil {
+				return "", err
+			}
+			sum += cellValue
+		}
+	}
+	return strconv.FormatInt(sum, 10), nil
+}
+
 func (c *Cell) FindDependentCells(otherCells []Cell) ([]Cell, error) {
 	var dependentCells []Cell
 	for _, cell := range otherCells {
