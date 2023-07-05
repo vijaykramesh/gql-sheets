@@ -41,7 +41,7 @@ func (c *Cell) ComputeValueFromRaw(otherCells []Cell) (string, error) {
 		if len(tokens) == 1 && tokens[0].TType == "Operand" && tokens[0].TSubType == "Range" {
 			computedValue, lookupErr := referenceLookup(tokens, otherCells)
 			if lookupErr != nil {
-				return "", lookupErr
+				return "ERROR", lookupErr
 			}
 			return computedValue, nil
 		}
@@ -49,7 +49,7 @@ func (c *Cell) ComputeValueFromRaw(otherCells []Cell) (string, error) {
 		if len(tokens) == 3 && tokens[0].TType == "Function" && tokens[0].TSubType == "Start" && tokens[0].TValue == "SUM" && tokens[1].TType == "Operand" && tokens[1].TSubType == "Range" && tokens[2].TType == "Function" && tokens[2].TSubType == "Stop" && tokens[2].TValue == "" {
 			computedValue, lookupErr := sumRange(tokens, otherCells)
 			if lookupErr != nil {
-				return "", lookupErr
+				return "ERROR", lookupErr
 			}
 			return computedValue, nil
 		}
@@ -58,7 +58,7 @@ func (c *Cell) ComputeValueFromRaw(otherCells []Cell) (string, error) {
 		if len(tokens) == 3 && tokens[0].TType == "Function" && tokens[0].TSubType == "Start" && tokens[0].TValue == "AVERAGE" && tokens[1].TType == "Operand" && tokens[1].TSubType == "Range" && tokens[2].TType == "Function" && tokens[2].TSubType == "Stop" && tokens[2].TValue == "" {
 			computedValue, lookupErr := averageRange(tokens, otherCells)
 			if lookupErr != nil {
-				return "", lookupErr
+				return "ERROR", lookupErr
 			}
 			return computedValue, nil
 		}

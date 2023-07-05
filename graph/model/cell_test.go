@@ -195,8 +195,8 @@ func TestComputeValueFromRaw(t *testing.T) {
 		}
 
 		// Check the result (should be nil)
-		if result != "" {
-			t.Errorf("Expected nil result, but got: %s", result)
+		if result != "ERROR" {
+			t.Errorf("Expected ERROR result, but got: %s", result)
 		}
 	})
 
