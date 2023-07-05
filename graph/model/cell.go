@@ -54,6 +54,14 @@ func (c *Cell) ComputeValueFromRaw(otherCells []Cell) (string, error) {
 			return computedValue, nil
 		}
 
+		// =AVERAGE(A1:A3) style formula, compute the value
+		if len(tokens) == 3 && tokens[0].TType == "Function" && tokens[0].TSubType == "Start" && tokens[0].TValue == "AVERAGE" && tokens[1].TType == "Operand" && tokens[1].TSubType == "Range" && tokens[2].TType == "Function" && tokens[2].TSubType == "Stop" && tokens[2].TValue == "" {
+			computedValue, lookupErr := averageRange(tokens, otherCells)
+			if lookupErr != nil {
+				return "", lookupErr
+			}
+			return computedValue, nil
+		}
 		return c.RawValue, nil
 	}
 	return c.RawValue, nil
@@ -78,28 +86,37 @@ func referenceLookup(tokens []efp.Token, otherCells []Cell) (string, error) {
 	}
 	return matchedCell.ComputedValue, nil
 }
+func averageRange(tokens []efp.Token, otherCells []Cell) (string, error) {
+
+	// compute average
+	var sum int64
+	var count int64
+	for _, cell := range otherCells {
+		check, e := checkIfCellInRange(&cell, tokens[1].TValue)
+		if e != nil {
+			return "", e
+		}
+		if check {
+			cellValue, err := strconv.ParseInt(cell.ComputedValue, 10, 64)
+			if err != nil {
+				return "", err
+			}
+			sum += cellValue
+			count++
+		}
+	}
+	return strconv.FormatInt(sum/count, 10), nil
+}
 
 func sumRange(tokens []efp.Token, otherCells []Cell) (string, error) {
-	fmt.Println("SUM formula")
-	fmt.Println(tokens)
-	fmt.Println(tokens[1].TValue)
-	// split tokens[1].TValue on : to get start and end cell
-	startCell := strings.Split(tokens[1].TValue, ":")[0]
-	endCell := strings.Split(tokens[1].TValue, ":")[1]
-
-	startColumnIndex, startRowIndex, err := columnAndRowIndexFromCode(startCell)
-	if err != nil {
-		return "", err
-	}
-
-	endColumnIndex, endRowIndex, err := columnAndRowIndexFromCode(endCell)
-	if err != nil {
-		return "", err
-	}
 
 	var sum int64
 	for _, cell := range otherCells {
-		if cell.ColumnIndex >= startColumnIndex && cell.ColumnIndex <= endColumnIndex && cell.RowIndex >= startRowIndex && cell.RowIndex <= endRowIndex {
+		check, e := checkIfCellInRange(&cell, tokens[1].TValue)
+		if e != nil {
+			return "", e
+		}
+		if check {
 			cellValue, err := strconv.ParseInt(cell.ComputedValue, 10, 64)
 			if err != nil {
 				return "", err
@@ -110,6 +127,23 @@ func sumRange(tokens []efp.Token, otherCells []Cell) (string, error) {
 	return strconv.FormatInt(sum, 10), nil
 }
 
+func checkIfCellInRange(c *Cell, tvalue string) (bool, error) {
+	startCell := strings.Split(tvalue, ":")[0]
+	endCell := strings.Split(tvalue, ":")[1]
+
+	startColumnIndex, startRowIndex, err := columnAndRowIndexFromCode(startCell)
+	if err != nil {
+		return false, err
+	}
+	endColumnIndex, endRowIndex, err := columnAndRowIndexFromCode(endCell)
+	if err != nil {
+		return false, err
+	}
+	if c.ColumnIndex >= startColumnIndex && c.ColumnIndex <= endColumnIndex && c.RowIndex >= startRowIndex && c.RowIndex <= endRowIndex {
+		return true, nil
+	}
+	return false, nil
+}
 func (c *Cell) FindDependentCells(otherCells []Cell) ([]Cell, error) {
 	var dependentCells []Cell
 	for _, cell := range otherCells {
@@ -119,6 +153,19 @@ func (c *Cell) FindDependentCells(otherCells []Cell) ([]Cell, error) {
 		if err == nil && len(tokens) == 1 && tokens[0].TType == "Operand" && tokens[0].TSubType == "Range" && tokens[0].TValue == cToken {
 			dependentCells = append(dependentCells, cell)
 		}
+		// =SUM(A1:A3) style formula, check if c is in the range and if so add cell to dependent cells
+
+		if err == nil && len(tokens) == 3 && tokens[0].TType == "Function" && tokens[0].TSubType == "Start" && (tokens[0].TValue == "SUM" || tokens[0].TValue == "AVERAGE") && tokens[1].TType == "Operand" && tokens[1].TSubType == "Range" && tokens[2].TType == "Function" && tokens[2].TSubType == "Stop" && tokens[2].TValue == "" {
+
+			check, e := checkIfCellInRange(c, tokens[1].TValue)
+			if e != nil {
+				return nil, e
+			}
+			if check {
+				dependentCells = append(dependentCells, cell)
+			}
+		}
+
 	}
 	return dependentCells, nil
 
