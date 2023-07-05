@@ -128,6 +128,9 @@ func sumRange(tokens []efp.Token, otherCells []Cell) (string, error) {
 }
 
 func checkIfCellInRange(c *Cell, tvalue string) (bool, error) {
+	if len(strings.Split(tvalue, ":")) != 2 {
+		return false, fmt.Errorf("invalid range %s", tvalue)
+	}
 	startCell := strings.Split(tvalue, ":")[0]
 	endCell := strings.Split(tvalue, ":")[1]
 
@@ -144,6 +147,7 @@ func checkIfCellInRange(c *Cell, tvalue string) (bool, error) {
 	}
 	return false, nil
 }
+
 func (c *Cell) FindDependentCells(otherCells []Cell) ([]Cell, error) {
 	var dependentCells []Cell
 	for _, cell := range otherCells {

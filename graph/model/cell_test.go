@@ -285,3 +285,46 @@ func TestAverageRange(t *testing.T) {
 		t.Errorf("Expected result: %s, but got: %s", expected, result)
 	}
 }
+
+func TestCheckIfCellInRange(t *testing.T) {
+	c := &Cell{
+		ColumnIndex: 1,
+		RowIndex:    1,
+	}
+
+	tvalue := "A1:B3"
+
+	result, err := checkIfCellInRange(c, tvalue)
+	if err != nil {
+		t.Errorf("Error occurred: %s", err.Error())
+	}
+
+	expected := true
+	if result != expected {
+		t.Errorf("Expected result: %t, but got: %t", expected, result)
+	}
+
+	// Testing case where cell is not within the range
+	c = &Cell{
+		ColumnIndex: 3,
+		RowIndex:    3,
+	}
+
+	result, err = checkIfCellInRange(c, tvalue)
+	if err != nil {
+		t.Errorf("Error occurred: %s", err.Error())
+	}
+
+	expected = false
+	if result != expected {
+		t.Errorf("Expected result: %t, but got: %t", expected, result)
+	}
+
+	// Testing case where tvalue is invalid and causes an error
+	tvalue = "InvalidRange"
+
+	_, err = checkIfCellInRange(c, tvalue)
+	if err == nil {
+		t.Error("Expected an error, but got no error")
+	}
+}
