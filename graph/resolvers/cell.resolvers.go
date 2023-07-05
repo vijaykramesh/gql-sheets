@@ -17,14 +17,7 @@ import (
 
 // ID is the resolver for the id field.
 func (r *cellResolver) ID(ctx context.Context, obj *model.Cell) (string, error) {
-	// TODO: this might be dumb, we maybe should just read it off obj
-	context := common.GetContext(ctx)
-	var cell model.Cell
-	err := context.Database.Where("id = ?", obj.ID).First(&cell).Error
-	if err != nil {
-		return "", fmt.Errorf("error getting cell: %v", err)
-	}
-	return strconv.FormatUint(uint64(cell.ID), 10), nil
+	return strconv.FormatUint(uint64(obj.ID), 10), nil
 }
 
 // Spreadsheet is the resolver for the spreadsheet field.

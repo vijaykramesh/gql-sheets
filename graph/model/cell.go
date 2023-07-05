@@ -87,17 +87,16 @@ func referenceLookup(tokens []efp.Token, otherCells []Cell) (string, error) {
 	return matchedCell.ComputedValue, nil
 }
 func averageRange(tokens []efp.Token, otherCells []Cell) (string, error) {
-
-	// compute average
-	var sum int64
+	// Compute average
+	var sum float64
 	var count int64
 	for _, cell := range otherCells {
-		check, e := checkIfCellInRange(&cell, tokens[1].TValue)
-		if e != nil {
-			return "", e
+		check, err := checkIfCellInRange(&cell, tokens[1].TValue)
+		if err != nil {
+			return "", err
 		}
 		if check {
-			cellValue, err := strconv.ParseInt(cell.ComputedValue, 10, 64)
+			cellValue, err := strconv.ParseFloat(cell.ComputedValue, 64)
 			if err != nil {
 				return "", err
 			}
@@ -105,7 +104,8 @@ func averageRange(tokens []efp.Token, otherCells []Cell) (string, error) {
 			count++
 		}
 	}
-	return strconv.FormatInt(sum/count, 10), nil
+	average := sum / float64(count)
+	return strconv.FormatFloat(average, 'f', -1, 64), nil
 }
 
 func sumRange(tokens []efp.Token, otherCells []Cell) (string, error) {
@@ -153,23 +153,18 @@ func (c *Cell) FindDependentCells(otherCells []Cell) ([]Cell, error) {
 	for _, cell := range otherCells {
 		tokens, err := cell.parseRawValue()
 
+		// =A4 style reference, check if c is the referenced cell and if so add cell to dependent cells
 		cToken := columnCodeFromColumnIndex(c.ColumnIndex) + strconv.Itoa(c.RowIndex+1)
 		if err == nil && len(tokens) == 1 && tokens[0].TType == "Operand" && tokens[0].TSubType == "Range" && tokens[0].TValue == cToken {
 			dependentCells = append(dependentCells, cell)
 		}
 		// =SUM(A1:A3) style formula, check if c is in the range and if so add cell to dependent cells
-
 		if err == nil && len(tokens) == 3 && tokens[0].TType == "Function" && tokens[0].TSubType == "Start" && (tokens[0].TValue == "SUM" || tokens[0].TValue == "AVERAGE") && tokens[1].TType == "Operand" && tokens[1].TSubType == "Range" && tokens[2].TType == "Function" && tokens[2].TSubType == "Stop" && tokens[2].TValue == "" {
-
-			check, e := checkIfCellInRange(c, tokens[1].TValue)
-			if e != nil {
-				return nil, e
-			}
+			check, _ := checkIfCellInRange(c, tokens[1].TValue)
 			if check {
 				dependentCells = append(dependentCells, cell)
 			}
 		}
-
 	}
 	return dependentCells, nil
 

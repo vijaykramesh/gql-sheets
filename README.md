@@ -38,7 +38,11 @@ See fe/README.md for more instructions on how to run the frontend.
 tl;dr: `cd fe && yarn && yarn start`
 
 ## Tests
-Run `go test ./... -cover` to run all tests.
+Run the following to run tests & coverage locally (for the golang backend)
+
+```shell
+$ go test -v ./... -covermode=count -coverprofile=coverage.out &&  go tool cover -func=coverage.out -o=coverage.out && cat coverage.out
+```
 
 ## Contributing
 Contributions are welcome, please fork and submit a PR.  Please follow the existing code style and conventions.

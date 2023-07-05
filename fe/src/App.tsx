@@ -100,18 +100,22 @@ const App: FunctionComponent = (): React.ReactElement => {
     }, [data, dataSpreadsheet, editModeColumnAndRow]);
 
     useEffect(() => {
-        if (editModeColumnAndRow == null && data && dataSpreadsheet) {
-            const preparedRowData = convertCellsToRowData(data.getCellsBySpreadsheetId, dataSpreadsheet.getSpreadsheet.rowCount, editModeColumnAndRow);
-            setRowData(preparedRowData);
+        if (data && dataSpreadsheet) {
+            if (editModeColumnAndRow == null) {
+                const preparedRowData = convertCellsToRowData(data.getCellsBySpreadsheetId, dataSpreadsheet.getSpreadsheet.rowCount, editModeColumnAndRow);
+                setRowData(preparedRowData);
+            }
         } else {
             console.log('data is null');
-        }
+}
     }, [data, dataSpreadsheet, editModeColumnAndRow]);
 
     useEffect(() => {
-        if (editModeColumnAndRow == null && dataSubscription && dataSpreadsheet && dataSpreadsheet.getSpreadsheet) {
-            const preparedRowData = convertCellsToRowData(dataSubscription.getCellsBySpreadsheetId, dataSpreadsheet.getSpreadsheet.rowCount, editModeColumnAndRow);
-            setRowData(preparedRowData);
+        if (dataSubscription && dataSpreadsheet && dataSpreadsheet.getSpreadsheet) {
+            if (editModeColumnAndRow == null) {
+                const preparedRowData = convertCellsToRowData(dataSubscription.getCellsBySpreadsheetId, dataSpreadsheet.getSpreadsheet.rowCount, editModeColumnAndRow);
+                setRowData(preparedRowData);
+            }
         } else {
             console.log('data is null');
         }
@@ -126,6 +130,7 @@ const App: FunctionComponent = (): React.ReactElement => {
     const onCellEditingStarted = (event: CellEditingStartedEvent) => {
         const { rowIndex, column } = event;
         const columnCode = column.getColId();
+        setEditModeColumnAndRow({column: "-1", row: -1})
         if (event.data && event.data[columnCode]){
             event.data[columnCode].editMode = 2;
             if (rowIndex !== null && rowIndex >= 0 && columnCode) {
@@ -142,6 +147,8 @@ const App: FunctionComponent = (): React.ReactElement => {
             event.data[columnCode].editMode = 0;
 
         }
+        setEditModeColumnAndRow(null)
+
         if (!event.valueChanged)
             return;
         // if they have edited a cell in a new row or column we have to update the sheet first
@@ -181,7 +188,6 @@ const App: FunctionComponent = (): React.ReactElement => {
                 rawValue:  event.newValue,
             },
         });
-        setEditModeColumnAndRow(null)
 
     };
 
