@@ -32,11 +32,16 @@ export function generateColumnFields(maxColumnIndex: number): ColDef[] {
                     return '';
                 }
 
-                const cellData = params.value;
-                if (cellData.editMode && cellData.editMode === 2) {
-                    return cellData.rawValue;
+                const cellData = params.data[columnCode];
+                const rawCellValue = params.value
+                if (cellData) {
+                    if (cellData.editMode && cellData.editMode === 0) {
+                        return cellData.rawValue;
+                    } else {
+                        return cellData.computedValue;
+                    }
                 } else {
-                    return cellData.computedValue;
+                    return rawCellValue;
                 }
             },
             valueParser: (params) => {
@@ -44,9 +49,9 @@ export function generateColumnFields(maxColumnIndex: number): ColDef[] {
             },
             valueGetter: (params) => {
                 if (params.data[columnCode]) {
-                    return params.data[columnCode].editMode === 1
-                        ? params.data[columnCode].rawValue
-                        : params.data[columnCode].computedValue;
+                    return params.data[columnCode].editMode !== 0
+                        ? params.data[columnCode].computedValue
+                        : params.data[columnCode].rawValue;
                 } else {
                     return '';
                 }
@@ -66,9 +71,8 @@ export function generateColumnFields(maxColumnIndex: number): ColDef[] {
     return fields;
 }
 
-export
-function convertCellsToRowData(data: Cell[], rowCount: number): { [key: string]: any }[] {
-    const maxRowIndex = Math.max(rowCount-1,Math.max(...data.map((cell) => cell.rowIndex)))
+export function convertCellsToRowData(data: Cell[], rowCount: number): { [key: string]: any }[] {
+    const maxRowIndex = Math.max(rowCount - 1, Math.max(...data.map((cell) => cell.rowIndex)))
     const maxColumnIndex = Math.max(...data.map((cell) => cell.columnIndex));
 
     const result: { [key: string]: object }[] = [];
