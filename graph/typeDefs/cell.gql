@@ -33,3 +33,7 @@ extend type Mutation {
     updateCell(id: String!, input: UpdateCell!): Cell!
     updateCellBySpreadsheetIdColumnAndRow(spreadsheetId: String!, columnIndex: Int!, rowIndex: Int!, input: UpdateCell!): Cell!
 }
+
+extend type Subscription {
+    getCellsBySpreadsheetId(spreadsheetId: String!): [Cell!]!
+}

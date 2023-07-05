@@ -52,3 +52,16 @@ export const UPDATE_SPREADSHEET = gql`
         }
     }
 `;
+
+export const GET_CELLS_BY_SPREADSHEET_ID_SUBSCRIPTION = gql`
+    subscription getCellsBySpreadsheetId($spreadsheetId: String!) {
+        getCellsBySpreadsheetId(spreadsheetId: $spreadsheetId) {
+            spreadsheet { name }
+            id
+            rowIndex
+            columnIndex
+            rawValue
+            computedValue
+        }
+    }
+`;

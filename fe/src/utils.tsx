@@ -79,7 +79,10 @@ export function generateColumnFields(maxColumnIndex: number): ColDef[] {
     return fields;
 }
 
-export function convertCellsToRowData(data: Cell[], rowCount: number): { [key: string]: any }[] {
+export function convertCellsToRowData(data: Cell[], rowCount: number, editModeColumnAndRow: {
+    column: string;
+    row: number
+} | null): { [key: string]: any }[] {
     const maxRowIndex = Math.max(rowCount - 1, Math.max(...data.map((cell) => cell.rowIndex)))
     const maxColumnIndex = Math.max(...data.map((cell) => cell.columnIndex));
 
@@ -90,12 +93,16 @@ export function convertCellsToRowData(data: Cell[], rowCount: number): { [key: s
         for (let j = 0; j <= maxColumnIndex; j++) {
             const cell = data.find((c) => c.rowIndex === i && c.columnIndex === j);
             const columnCode = columnCodeFromColumnIndex(j);
+            let editMode = 0
+            if (editModeColumnAndRow && editModeColumnAndRow.row === i && editModeColumnAndRow.column === columnCode) {
+                editMode = 1;
+            }
             row[columnCode] = cell
                 ? {
                     rowIndex: (i + 1).toString(),
                     rawValue: cell.rawValue.toString(),
                     computedValue: (cell.computedValue || '').toString(),
-                    editMode: 0,
+                    editMode: editMode,
                 }
                 : {
                     rowIndex: (i + 1).toString(),

@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/vijaykramesh/gql-sheets/graph/common"
 	"github.com/vijaykramesh/gql-sheets/graph/generated"
@@ -183,6 +184,23 @@ func (r *queryResolver) GetCellsBySpreadsheetID(ctx context.Context, spreadsheet
 	return cells, nil
 }
 
+// GetCellsBySpreadsheetID is the resolver for the getCellsBySpreadsheetId field.
+func (r *subscriptionResolver) GetCellsBySpreadsheetID(ctx context.Context, spreadsheetID string) (<-chan []*model.Cell, error) {
+	ch := make(chan []*model.Cell)
+	go func() {
+		for {
+			time.Sleep(1 * time.Second)
+			var cells []*model.Cell
+			err := common.GetContext(ctx).Database.Where("spreadsheet_id = ?", spreadsheetID).Find(&cells).Error
+			if err != nil {
+				panic(fmt.Errorf("error getting cells: %v", err))
+			}
+			ch <- cells
+		}
+	}()
+	return ch, nil
+}
+
 // Cell returns generated.CellResolver implementation.
 func (r *Resolver) Cell() generated.CellResolver { return &cellResolver{r} }
 
@@ -192,6 +210,10 @@ func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResol
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
+// Subscription returns generated.SubscriptionResolver implementation.
+func (r *Resolver) Subscription() generated.SubscriptionResolver { return &subscriptionResolver{r} }
+
 type cellResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+type subscriptionResolver struct{ *Resolver }
