@@ -1,0 +1,35 @@
+
+
+type Cell {
+    id: String!
+    spreadsheet: Spreadsheet!
+    rawValue: String!
+    computedValue: String
+    rowIndex: Int!
+    columnIndex: Int!
+}
+
+
+input NewCell {
+    spreadsheetId: String!
+    rawValue: String!
+    rowIndex: Int!
+    columnIndex: Int!
+}
+
+input UpdateCell {
+    rawValue: String!
+}
+
+extend type Query {
+    cells: [Cell!]!
+    getCell(id: String!): Cell!
+    getCellsBySpreadsheetId(spreadsheetId: String!): [Cell!]!
+}
+
+
+extend type Mutation {
+    createCell(input: NewCell!): Cell!
+    updateCell(id: String!, input: UpdateCell!): Cell!
+    updateCellBySpreadsheetIdColumnAndRow(spreadsheetId: String!, columnIndex: Int!, rowIndex: Int!, input: UpdateCell!): Cell!
+}

@@ -1,0 +1,27 @@
+
+
+type Spreadsheet {
+    id: String!
+    name: String!
+    rowCount: Int!
+    columnCount: Int!
+}
+
+
+input NewSpreadsheet {
+    name: String!
+    rowCount: Int!
+    columnCount: Int!
+}
+
+
+extend type Query {
+    spreadsheets: [Spreadsheet!]!
+    getSpreadsheet(id: String!): Spreadsheet!
+}
+
+
+extend type Mutation {
+    createSpreadsheet(input: NewSpreadsheet!): Spreadsheet!
+    updateSpreadsheet(id: String!, input: NewSpreadsheet!): Spreadsheet!
+}

@@ -1,0 +1,10 @@
+version: '3'
+services:
+  sat-db-service:
+    container_name: sat-db-service
+    image: postgres
+    env_file: .env
+    volumes:
+    - ./local/postgres/:/docker-entrypoint-initdb.d
+    ports:
+      - '9000:5432'
