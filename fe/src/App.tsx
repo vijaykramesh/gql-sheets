@@ -102,18 +102,19 @@ const App: FunctionComponent = (): React.ReactElement => {
     const onCellEditingStarted = (event: CellEditingStartedEvent) => {
         const { rowIndex, column } = event;
         const columnCode = column.getColId();
-        if (event.data && event.data[columnCode] && event.data[columnCode].editMode === 0) {
-            if (event.api) {
-                event.api.stopEditing();
-            }
+        if (event.data && event.data[columnCode]){
+            event.data[columnCode].editMode = 2;
         }
-
-        if (event.data && event.data[columnCode]) event.data[columnCode].editMode = 2;
     };
 
     const onCellEditingStopped = (event: CellEditingStoppedEvent) => {
         const { rowIndex, column } = event;
-
+        const columnCode = column.getColId();
+        if (columnCode && event.data && event.data[columnCode]){
+            event.data[columnCode].editMode = 0;
+        }
+        if (!event.valueChanged)
+            return;
         // if they have edited a cell in a new row or column we have to update the sheet first
         // the UX here is cludgy, but it's a demo
         if (dataSpreadsheet.getSpreadsheet.rowCount < (rowIndex||0) + 1 || dataSpreadsheet.getSpreadsheet.columnCount < column.getInstanceId()) {
@@ -151,9 +152,7 @@ const App: FunctionComponent = (): React.ReactElement => {
                 rawValue:  event.newValue,
             },
         });
-        const columnCode = column.getColId();
-        console.log("EventCellEditingStopped,", event);
-        if (columnCode && event.data && event.data[columnCode]) event.data[columnCode].editMode = 1;
+
     };
 
     const gridOptions = {
