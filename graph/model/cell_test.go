@@ -261,3 +261,70 @@ func TestSumRange(t *testing.T) {
 		t.Errorf("Expected result: %s, but got: %s", expected, result)
 	}
 }
+func TestAverageRange(t *testing.T) {
+	tokens := []efp.Token{
+		{TType: "Function", TSubType: "Start", TValue: "AVERAGE"},
+		{TType: "Operand", TSubType: "Range", TValue: "A1:A3"},
+		{TType: "Function", TSubType: "Stop", TValue: ""},
+	}
+
+	otherCells := []Cell{
+		{ColumnIndex: 0, RowIndex: 0, ComputedValue: "10"},
+		{ColumnIndex: 0, RowIndex: 1, ComputedValue: "20"},
+		{ColumnIndex: 0, RowIndex: 2, ComputedValue: "30"},
+		{ColumnIndex: 1, RowIndex: 1, ComputedValue: "40"},
+	}
+
+	result, err := averageRange(tokens, otherCells)
+	if err != nil {
+		t.Errorf("Error occurred: %s", err.Error())
+	}
+
+	expected := "20"
+	if result != expected {
+		t.Errorf("Expected result: %s, but got: %s", expected, result)
+	}
+}
+
+func TestCheckIfCellInRange(t *testing.T) {
+	c := &Cell{
+		ColumnIndex: 1,
+		RowIndex:    1,
+	}
+
+	tvalue := "A1:B3"
+
+	result, err := checkIfCellInRange(c, tvalue)
+	if err != nil {
+		t.Errorf("Error occurred: %s", err.Error())
+	}
+
+	expected := true
+	if result != expected {
+		t.Errorf("Expected result: %t, but got: %t", expected, result)
+	}
+
+	// Testing case where cell is not within the range
+	c = &Cell{
+		ColumnIndex: 3,
+		RowIndex:    3,
+	}
+
+	result, err = checkIfCellInRange(c, tvalue)
+	if err != nil {
+		t.Errorf("Error occurred: %s", err.Error())
+	}
+
+	expected = false
+	if result != expected {
+		t.Errorf("Expected result: %t, but got: %t", expected, result)
+	}
+
+	// Testing case where tvalue is invalid and causes an error
+	tvalue = "InvalidRange"
+
+	_, err = checkIfCellInRange(c, tvalue)
+	if err == nil {
+		t.Error("Expected an error, but got no error")
+	}
+}
