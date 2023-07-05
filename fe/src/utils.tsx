@@ -1,5 +1,8 @@
 import {ColDef} from "ag-grid-community";
 import {Cell} from "./__generated__/graphql";
+import ReactMarkdown from "react-markdown";
+import React from 'react';
+import {renderToStaticMarkup} from "react-dom/server";
 
 export function columnCodeFromColumnIndex(columnIndex: number): string {
     if (columnIndex < 0) {
@@ -38,7 +41,10 @@ export function generateColumnFields(maxColumnIndex: number): ColDef[] {
                     if (cellData.editMode && cellData.editMode === 0) {
                         return cellData.rawValue;
                     } else {
-                        return cellData.computedValue;
+                        const markdownContent = renderToStaticMarkup(<ReactMarkdown>{cellData.computedValue}</ReactMarkdown>);
+                        return `<span dangerouslySetInnerHTML={{ __html: ${markdownContent} }} />`;
+
+                        // return cellData.computedValue;
                     }
                 } else {
                     return rawCellValue;
@@ -49,8 +55,10 @@ export function generateColumnFields(maxColumnIndex: number): ColDef[] {
             },
             valueGetter: (params) => {
                 if (params.data[columnCode]) {
+                    const markdownContent = renderToStaticMarkup(<ReactMarkdown>{params.data[columnCode].computedValue}</ReactMarkdown>);
+
                     return params.data[columnCode].editMode !== 0
-                        ? params.data[columnCode].computedValue
+                        ? `<span dangerouslySetInnerHTML={{ __html: ${markdownContent} }} />`
                         : params.data[columnCode].rawValue;
                 } else {
                     return '';

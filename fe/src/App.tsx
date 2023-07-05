@@ -98,6 +98,10 @@ const App: FunctionComponent = (): React.ReactElement => {
         }
     }, [data, dataSpreadsheet]);
 
+    useEffect(() => {
+        document.title = 'gql-sheets';
+    }, []);
+
 
     const onCellEditingStarted = (event: CellEditingStartedEvent) => {
         const { rowIndex, column } = event;
