@@ -162,6 +162,7 @@ func TestComputeValueFromRaw(t *testing.T) {
 	otherCells := []Cell{
 		{ColumnIndex: 0, RowIndex: 0, ComputedValue: "5"},
 		{ColumnIndex: 0, RowIndex: 1, ComputedValue: "10"},
+		{ColumnIndex: 1, RowIndex: 0, ComputedValue: "words"},
 	}
 
 	t.Run("Formula or Reference - Cell Found", func(t *testing.T) {
@@ -213,6 +214,39 @@ func TestComputeValueFromRaw(t *testing.T) {
 		}
 		if result != c.RawValue {
 			t.Errorf("Expected value: %s, but got: %s", c.RawValue, result)
+		}
+	})
+
+	t.Run("SUM Formula - Valid Range", func(t *testing.T) {
+		// Set up the test case
+		c.RawValue = "=SUM(A1:A2)"
+
+		// Call the function
+		result, err := c.ComputeValueFromRaw(otherCells)
+
+		// Check the result
+		if err != nil {
+			t.Errorf("Expected no error, but got: %s", err.Error())
+		}
+		expectedValue := "15"
+		if result != expectedValue {
+			t.Errorf("Expected value: %s, but got: %s", expectedValue, result)
+		}
+	})
+	t.Run("AVERAGE Formula - Valid Range", func(t *testing.T) {
+		// Set up the test case
+		c.RawValue = "=AVERAGE(A1:A2)"
+
+		// Call the function
+		result, err := c.ComputeValueFromRaw(otherCells)
+
+		// Check the result
+		if err != nil {
+			t.Errorf("Expected no error, but got: %s", err.Error())
+		}
+		expectedValue := "7.5"
+		if result != expectedValue {
+			t.Errorf("Expected value: %s, but got: %s", expectedValue, result)
 		}
 	})
 }
@@ -327,4 +361,42 @@ func TestCheckIfCellInRange(t *testing.T) {
 	if err == nil {
 		t.Error("Expected an error, but got no error")
 	}
+}
+
+func TestFindDependentCells(t *testing.T) {
+	c := Cell{
+		ColumnIndex: 0,
+		RowIndex:    0,
+		RawValue:    "TEST VALUE",
+	}
+
+	otherCells := []Cell{
+		{ColumnIndex: 1, RowIndex: 0, RawValue: "=A1"},
+		{ColumnIndex: 0, RowIndex: 1, RawValue: "=B3"},
+		{ColumnIndex: 2, RowIndex: 1, RawValue: "=AVERAGE(A1:A3)"},
+		{ColumnIndex: 3, RowIndex: 1, RawValue: "=SUM(A1:C4)"},
+	}
+
+	t.Run("Dependent Cells Found", func(t *testing.T) {
+		dependentCells, err := c.FindDependentCells(otherCells)
+		assert.NoError(t, err)
+		assert.NotNil(t, dependentCells)
+		assert.Equal(t, 3, len(dependentCells))
+		assert.Equal(t, 1, dependentCells[0].ColumnIndex)
+		assert.Equal(t, 0, dependentCells[0].RowIndex)
+	})
+
+	t.Run("No Dependent Cells", func(t *testing.T) {
+		c := Cell{
+			ColumnIndex: 4,
+			RowIndex:    4,
+			RawValue:    "99",
+		}
+
+		dependentCells, err := c.FindDependentCells(otherCells)
+
+		assert.NoError(t, err)
+		assert.Equal(t, 0, len(dependentCells))
+	})
+
 }
