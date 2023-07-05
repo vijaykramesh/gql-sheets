@@ -1,6 +1,10 @@
 # gql-sheets
 
+
 ## About
+
+<img width="1609" alt="Screen Shot 2023-07-04 at 11 34 55 PM" src="https://github.com/vijaykramesh/gql-sheets/assets/556288/953877a4-d8f1-4d8e-b9d0-9bb1209902de">
+
 This is a small project to power a web-based spreadsheet application.
 
 The backend is in Golang using gqlgen and gorm, and the frontend is in React using Apollo Client.
