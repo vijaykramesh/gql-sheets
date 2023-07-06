@@ -97,10 +97,13 @@ const App: FunctionComponent = (): React.ReactElement => {
         // Perform the desired action (e.g., console.log)
         revertVersion({ variables: { spreadsheetId: "1", version: selectedVersion } });
         setIsConfirmationOpen(false); // Close the confirmation modal
+        setSelectedVersion(''); // Reset the selected version
+
     };
 
     const handleCloseConfirmation = () => {
         setIsConfirmationOpen(false); // Close the confirmation modal
+        setSelectedVersion(''); // Reset the selected version
     };
 
 
@@ -252,15 +255,35 @@ const App: FunctionComponent = (): React.ReactElement => {
     return (
         <ThemeProvider theme={theme}>
             <div className="App" style={{ height: '100%' }}>
-                <header className="App-header" style={{ height: '50px' }}>
-                    gql-sheets
+                <header className="App-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '70px' }}>
+                    <Typography variant="h6" style={{ color: '#FFF', paddingTop:'20px' }}>gql-sheets</Typography>
+
                 </header>
+
                 <div className="container">
+                    <div className="revert-section" style={{ marginLeft: 'auto', width: '300px', marginRight:'50px', padding:'20px' }}>
+                        <FormControl variant="outlined" style={{ width: 300 }} className="revert-select">
+                            {dataVersion.getVersions && (
+                                <Select
+                                    value={selectedVersion || dataVersion.getVersions[dataVersion.getVersions.length - 1].version}
+
+                                    onChange={handleVersionChange}
+                                >
+                                    {dataVersion.getVersions.map((version, index) => (
+                                        <MenuItem key={index} value={version.version}>
+                                            {new Date(version.version*1).toLocaleString()}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+
+                            )}
+                        </FormControl>
+                    </div>
                     <div className="modal">
                         <Dialog open={isConfirmationOpen} onClose={handleCloseConfirmation}>
                             <DialogTitle>Confirmation</DialogTitle>
                             <DialogContent>
-                                Are you sure you want to proceed?
+                                Are you sure you want to proceed? This will revert the spreadsheet to a previous version and lose all changes made since then.
                             </DialogContent>
                             <DialogActions>
                                 <Button onClick={handleCloseConfirmation} color="primary">
@@ -272,25 +295,7 @@ const App: FunctionComponent = (): React.ReactElement => {
                             </DialogActions>
                         </Dialog>
                     </div>
-                    <div className="revert-section">
-                        <Typography variant="h6">Revert to an earlier version:</Typography>
-                        <FormControl variant="outlined" style={{ width: 300 }} className="revert-select">
-                            {dataVersion.getVersions && (
-                                <Select
-                                    labelId="version-select-label"
-                                    value={selectedVersion || dataVersion.getVersions[dataVersion.getVersions.length - 1].version}
-                                    onChange={handleVersionChange}
-                                >
-                                    {dataVersion.getVersions.map((version, index) => (
-                                        <MenuItem key={index} value={version.version}>
-                                            {version.version}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            )}
-                        </FormControl>
-                    </div>
-                </div>
+
                 <div style={gridStyle} className="ag-theme-alpine">
                     <AgGridReact<Cell>
                         gridOptions={gridOptions}
@@ -300,6 +305,7 @@ const App: FunctionComponent = (): React.ReactElement => {
                         onGridReady={onGridReady}
                     ></AgGridReact>
                 </div>
+            </div>
             </div>
         </ThemeProvider>
     );
