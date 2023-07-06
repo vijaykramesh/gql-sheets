@@ -97,11 +97,10 @@ func averageRange(tokens []efp.Token, otherCells []Cell) (string, error) {
 		}
 		if check {
 			cellValue, err := strconv.ParseFloat(cell.ComputedValue, 64)
-			if err != nil {
-				return "", err
+			if err == nil {
+				sum += cellValue
+				count++
 			}
-			sum += cellValue
-			count++
 		}
 	}
 	average := sum / float64(count)
@@ -118,10 +117,9 @@ func sumRange(tokens []efp.Token, otherCells []Cell) (string, error) {
 		}
 		if check {
 			cellValue, err := strconv.ParseInt(cell.ComputedValue, 10, 64)
-			if err != nil {
-				return "", err
+			if err == nil {
+				sum += cellValue
 			}
-			sum += cellValue
 		}
 	}
 	return strconv.FormatInt(sum, 10), nil

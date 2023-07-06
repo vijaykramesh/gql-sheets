@@ -1,5 +1,5 @@
 # gql-sheets
-![Coverage](https://img.shields.io/badge/Coverage-62.6%25-yellow)
+![Coverage](https://img.shields.io/badge/Coverage-63.1%25-yellow)
 
 
 ## About
@@ -15,6 +15,7 @@ The backend is in Golang using gqlgen and gorm, and the frontend is in React usi
 - Websocket support for live updates
 - Formula support
 - Markdown support
+- Prometheus metrics
 
 ## Supported Formulas
 - `=A1` reference lookup
@@ -36,6 +37,21 @@ Finally, run `go run ./server.go` to bring up the server.
 See fe/README.md for more instructions on how to run the frontend.
 
 tl;dr: `cd fe && yarn && yarn start`
+
+### Prometheus
+Run local Prometheus + Grafana via [docker-compose](https://github.com/ninadingole/docker-compose-stacks/tree/master/prometheus-grafana) and configure it to scrape the backend service.
+
+```yaml
+- job_name: app
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['host.docker.internal:8081']
+```
+(Note you should also change the docker Grafana to forward to port 3333 instead of 3000)
+
+Gorm gives us a number of neat metrics out of the box:
+
+[TODO Screenshot]
 
 ## Tests
 Run the following to run tests & coverage locally (for the golang backend)
