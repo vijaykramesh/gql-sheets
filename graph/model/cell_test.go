@@ -476,3 +476,62 @@ func TestFindDependentCells(t *testing.T) {
 	})
 
 }
+func TestBuildLatestVersionSeenForColumnAndRowIndex(t *testing.T) {
+	t.Run("should build latest version seen for column and row index", func(t *testing.T) {
+		otherCells := []Cell{
+			{ColumnIndex: 0, RowIndex: 0, Version: 1},
+			{ColumnIndex: 0, RowIndex: 1, Version: 2},
+			{ColumnIndex: 1, RowIndex: 0, Version: 1},
+			{ColumnIndex: 1, RowIndex: 1, Version: 3},
+		}
+
+		latestVersionSeen := buildLatestVersionSeenForColumnAndRowIndex(otherCells)
+
+		assert.Equal(t, uint64(1), latestVersionSeen["0-0"])
+		assert.Equal(t, uint64(2), latestVersionSeen["0-1"])
+		assert.Equal(t, uint64(1), latestVersionSeen["1-0"])
+		assert.Equal(t, uint64(3), latestVersionSeen["1-1"])
+	})
+
+	t.Run("should handle empty otherCells slice", func(t *testing.T) {
+		otherCells := []Cell{}
+
+		latestVersionSeen := buildLatestVersionSeenForColumnAndRowIndex(otherCells)
+
+		assert.Empty(t, latestVersionSeen)
+	})
+}
+
+func TestBuildOnlyLatestVersionOtherCells(t *testing.T) {
+	t.Run("should build only latest version other cells", func(t *testing.T) {
+		otherCells := []Cell{
+			{ColumnIndex: 0, RowIndex: 0, Version: 1},
+			{ColumnIndex: 0, RowIndex: 1, Version: 2},
+			{ColumnIndex: 1, RowIndex: 0, Version: 1},
+			{ColumnIndex: 1, RowIndex: 1, Version: 3},
+		}
+		latestVersionSeen := map[string]uint64{
+			"0-0": 1,
+			"0-1": 2,
+			"1-0": 1,
+			"1-1": 3,
+		}
+
+		onlyLatestVersionOtherCells := buildOnlyLatestVersionOtherCells(otherCells, latestVersionSeen)
+
+		assert.Equal(t, 4, len(onlyLatestVersionOtherCells))
+		assert.Equal(t, uint64(1), onlyLatestVersionOtherCells[0].Version)
+		assert.Equal(t, uint64(2), onlyLatestVersionOtherCells[1].Version)
+		assert.Equal(t, uint64(1), onlyLatestVersionOtherCells[2].Version)
+		assert.Equal(t, uint64(3), onlyLatestVersionOtherCells[3].Version)
+	})
+
+	t.Run("should handle empty otherCells slice", func(t *testing.T) {
+		otherCells := []Cell{}
+		latestVersionSeen := map[string]uint64{}
+
+		onlyLatestVersionOtherCells := buildOnlyLatestVersionOtherCells(otherCells, latestVersionSeen)
+
+		assert.Empty(t, onlyLatestVersionOtherCells)
+	})
+}
