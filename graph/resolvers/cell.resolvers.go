@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/WinterYukky/gorm-extra-clause-plugin/exclause"
 	"github.com/vijaykramesh/gql-sheets/graph/common"
 	"github.com/vijaykramesh/gql-sheets/graph/generated"
 	"github.com/vijaykramesh/gql-sheets/graph/model"
@@ -32,8 +33,8 @@ func (r *cellResolver) Spreadsheet(ctx context.Context, obj *model.Cell) (*model
 }
 
 // Version is the resolver for the version field.
-func (r *cellResolver) Version(ctx context.Context, obj *model.Cell) (int, error) {
-	return int(obj.Version), nil
+func (r *cellResolver) Version(ctx context.Context, obj *model.Cell) (string, error) {
+	return strconv.FormatUint(obj.Version, 10), nil
 }
 
 // CreateCell is the resolver for the createCell field.
@@ -79,56 +80,7 @@ func (r *mutationResolver) UpdateCell(ctx context.Context, id string, input mode
 		return nil, err
 	}
 
-	return updateCellAndDependentCells(cell, context, input)
-
-}
-
-func updateCellAndDependentCells(cell model.Cell, context *common.CustomContext, input model.UpdateCell) (*model.Cell, error) {
-	cell.RawValue = input.RawValue
-
-	var otherCells []model.Cell
-	err := context.Database.Where("spreadsheet_id = ? and id != ?", cell.SpreadsheetID, cell.ID).Find(&otherCells).Error
-	if err != nil {
-		return nil, fmt.Errorf("error getting cells: %v", err)
-	}
-
-	cell.ComputedValue, err = cell.ComputeValueFromRaw(otherCells)
-	err = context.Database.Save(&cell).Error
-	if err != nil {
-		return nil, fmt.Errorf("error updating cell: %v", err)
-	}
-	otherCells = append(otherCells, cell)
-	dependentCells, err := cell.FindDependentCells(otherCells)
-	for _, dependentCell := range dependentCells {
-		dependentCell.ComputedValue, err = dependentCell.ComputeValueFromRaw(otherCells)
-		if err != nil {
-			return nil, err
-		}
-		err = context.Database.Save(&dependentCell).Error
-		if err != nil {
-			return nil, fmt.Errorf("error updating cell: %v", err)
-		}
-
-		// todo change this to recurse and support infinite reference depth
-		filteredOtherCells := []model.Cell{}
-		for _, otherCell := range otherCells {
-			if otherCell.ID != dependentCell.ID {
-				filteredOtherCells = append(filteredOtherCells, otherCell)
-			}
-		}
-		filteredOtherCells = append(filteredOtherCells, dependentCell)
-		dependentCells, err = dependentCell.FindDependentCells(filteredOtherCells)
-		for _, dependentCell := range dependentCells {
-			dependentCell.ComputedValue, err = dependentCell.ComputeValueFromRaw(filteredOtherCells)
-			if err != nil {
-				return nil, err
-			}
-			err = context.Database.Save(&dependentCell).Error
-		}
-
-	}
-
-	return &cell, nil
+	return cell.UpdateCellAndDependentCells(context, input)
 }
 
 // UpdateCellBySpreadsheetIDColumnAndRow is the resolver for the updateCellBySpreadsheetIdColumnAndRow field.
@@ -145,8 +97,7 @@ func (r *mutationResolver) UpdateCellBySpreadsheetIDColumnAndRow(ctx context.Con
 		}
 	}
 
-	return updateCellAndDependentCells(cell, context, input)
-
+	return cell.UpdateCellAndDependentCells(context, input)
 }
 
 // Cells is the resolver for the cells field.
@@ -175,7 +126,8 @@ func (r *queryResolver) GetCell(ctx context.Context, id string) (*model.Cell, er
 func (r *queryResolver) GetCellsBySpreadsheetID(ctx context.Context, spreadsheetID string) ([]*model.Cell, error) {
 	context := common.GetContext(ctx)
 	var cells []*model.Cell
-	err := context.Database.Where("spreadsheet_id = ?", spreadsheetID).Find(&cells).Error
+
+	err := context.Database.Clauses(exclause.NewWith("cte", context.Database.Table("cells").Select("column_index,row_index,max(version) as version").Group("column_index,row_index"))).Where("spreadsheet_id = ? AND version = (SELECT version FROM cte WHERE column_index = cells.column_index AND row_index = cells.row_index)", spreadsheetID).Find(&cells).Error
 	if err != nil {
 		return nil, fmt.Errorf("error getting cells: %v", err)
 	}
@@ -187,9 +139,10 @@ func (r *subscriptionResolver) GetCellsBySpreadsheetID(ctx context.Context, spre
 	ch := make(chan []*model.Cell)
 	go func() {
 		for {
+			context := common.GetContext(ctx)
 			time.Sleep(1 * time.Second)
 			var cells []*model.Cell
-			err := common.GetContext(ctx).Database.Where("spreadsheet_id = ?", spreadsheetID).Find(&cells).Error
+			err := context.Database.Clauses(exclause.NewWith("cte", context.Database.Table("cells").Select("column_index,row_index,max(version) as version").Group("column_index,row_index"))).Where("spreadsheet_id = ? AND version = (SELECT version FROM cte WHERE column_index = cells.column_index AND row_index = cells.row_index)", spreadsheetID).Find(&cells).Error
 			if err != nil {
 				panic(fmt.Errorf("error getting cells: %v", err))
 			}

@@ -3,11 +3,14 @@ package model
 import (
 	"errors"
 	"fmt"
+	"github.com/WinterYukky/gorm-extra-clause-plugin/exclause"
+	"github.com/vijaykramesh/gql-sheets/graph/common"
 	"github.com/xuri/efp"
 	"gorm.io/gorm"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Cell struct {
@@ -18,7 +21,7 @@ type Cell struct {
 	ComputedValue string       `json:"computedValue,omitempty"`
 	RowIndex      int          `json:"rowIndex"`
 	ColumnIndex   int          `json:"columnIndex"`
-	Version       int          `json:"version"`
+	Version       uint64       `json:"version"`
 }
 
 func (c *Cell) parseRawValue() ([]efp.Token, error) {
@@ -66,6 +69,58 @@ func (c *Cell) ComputeValueFromRaw(otherCells []Cell) (string, error) {
 		return c.RawValue, nil
 	}
 	return c.RawValue, nil
+}
+
+func (c *Cell) UpdateCellAndDependentCells(context *common.CustomContext, input UpdateCell) (*Cell, error) {
+	version := uint64(time.Now().UnixMilli())
+	c.RawValue = input.RawValue
+
+	var otherCells []Cell
+	err := context.Database.Clauses(exclause.NewWith("cte", context.Database.Table("cells").Select("column_index,row_index,max(version) as version").Group("column_index,row_index"))).Where("spreadsheet_id = ? AND id != ? AND version = (SELECT version FROM cte WHERE column_index = cells.column_index AND row_index = cells.row_index)", c.SpreadsheetID, c.ID).Find(&otherCells).Error
+	if err != nil {
+		return nil, fmt.Errorf("error getting cells: %v", err)
+	}
+
+	c.ComputedValue, err = c.ComputeValueFromRaw(otherCells)
+	c.Version = version
+	err = context.Database.Omit("id").Create(&c).Error
+	if err != nil {
+		return nil, fmt.Errorf("error updating cell: %v", err)
+	}
+	otherCells = append(otherCells, *c)
+	dependentCells, err := c.FindDependentCells(otherCells)
+	for _, dependentCell := range dependentCells {
+		dependentCell.ComputedValue, err = dependentCell.ComputeValueFromRaw(otherCells)
+		if err != nil {
+			return nil, err
+		}
+		dependentCell.Version = version
+		err = context.Database.Omit("id").Create(&dependentCell).Error
+		if err != nil {
+			return nil, fmt.Errorf("error updating cell: %v", err)
+		}
+
+		// todo change this to recurse and support infinite reference depth
+		filteredOtherCells := []Cell{}
+		for _, otherCell := range otherCells {
+			if otherCell.ID != dependentCell.ID {
+				filteredOtherCells = append(filteredOtherCells, otherCell)
+			}
+		}
+		filteredOtherCells = append(filteredOtherCells, dependentCell)
+		dependentCells, err = dependentCell.FindDependentCells(filteredOtherCells)
+		for _, dc := range dependentCells {
+			dc.ComputedValue, err = dc.ComputeValueFromRaw(filteredOtherCells)
+			if err != nil {
+				return nil, err
+			}
+			dc.Version = version
+			err = context.Database.Omit("id").Create(&dc).Error
+		}
+
+	}
+
+	return c, nil
 }
 
 func referenceLookup(tokens []efp.Token, otherCells []Cell) (string, error) {

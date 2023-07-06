@@ -90,7 +90,7 @@ type CellResolver interface {
 	ID(ctx context.Context, obj *model.Cell) (string, error)
 	Spreadsheet(ctx context.Context, obj *model.Cell) (*model.Spreadsheet, error)
 
-	Version(ctx context.Context, obj *model.Cell) (int, error)
+	Version(ctx context.Context, obj *model.Cell) (string, error)
 }
 type MutationResolver interface {
 	CreateCell(ctx context.Context, input model.NewCell) (*model.Cell, error)
@@ -462,7 +462,7 @@ type Cell {
     computedValue: String
     rowIndex: Int!
     columnIndex: Int!
-    version: Int!
+    version: String!
 }
 
 
@@ -1064,9 +1064,9 @@ func (ec *executionContext) _Cell_version(ctx context.Context, field graphql.Col
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Cell_version(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1076,7 +1076,7 @@ func (ec *executionContext) fieldContext_Cell_version(ctx context.Context, field
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil

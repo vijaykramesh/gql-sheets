@@ -7,7 +7,7 @@ type Cell {
     computedValue: String
     rowIndex: Int!
     columnIndex: Int!
-    version: Int!
+    version: String!
 }
 
 
