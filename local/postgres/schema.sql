@@ -18,5 +18,5 @@ create table cells (
                               created_at timestamp default current_timestamp,
                               updated_at timestamp default current_timestamp,
                               deleted_at timestamp,
-                   version bigint default 1
+                              version bigint default 1
 );

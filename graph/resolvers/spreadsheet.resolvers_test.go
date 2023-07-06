@@ -226,3 +226,119 @@ func TestSpreadsheetResolver_ID(t *testing.T) {
 		require.Equal(t, "1", resp.GetSpreadsheet.ID)
 	})
 }
+
+func TestQueryResolver_GetVersions(t *testing.T) {
+	t.Run("should get versions for a specific spreadsheet", func(t *testing.T) {
+		// Mock the database and prepare expectations
+		mockDB, mock, _ := sqlmock.New()
+		dialector := postgres.New(postgres.Config{
+			Conn:       mockDB,
+			DriverName: "postgres",
+		})
+		mock.ExpectQuery(`SELECT \* FROM .+ WHERE spreadsheet_id = \$1`).WithArgs("1").
+			WillReturnRows(sqlmock.NewRows([]string{"id", "spreadsheet_id", "version"}).
+				AddRow(1, "1", 1).
+				AddRow(2, "1", 2).
+				AddRow(3, "1", 3))
+
+		// Create a test context with the mocked database
+		db, _ := gorm.Open(dialector, &gorm.Config{})
+		customCtx := &common.CustomContext{
+			Database: db,
+		}
+		srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &Resolver{}}))
+		ctx := common.CreateContext(customCtx, srv)
+
+		// Create a GraphQL client
+		gql := client.New(ctx)
+
+		// Define the response structure
+		resp := struct {
+			GetVersions []*model.Version
+		}{}
+
+		// Construct the GraphQL query
+		q := `query getVersions {
+			getVersions(id: "1") {
+				version
+			}
+		}`
+
+		// Send the GraphQL request and decode the response
+		gql.MustPost(q, &resp)
+
+		// Perform assertions on the response
+		require.NotNil(t, resp.GetVersions)
+		require.Equal(t, 3, len(resp.GetVersions))
+		require.Equal(t, "1", resp.GetVersions[0].Version)
+		require.Equal(t, "2", resp.GetVersions[1].Version)
+		require.Equal(t, "3", resp.GetVersions[2].Version)
+	})
+}
+func TestSubscriptionResolver_GetVersions(t *testing.T) {
+	t.Run("should receive versions for a specific spreadsheet", func(t *testing.T) {
+		// Create a test context with a mock database
+		mockDB, mock, _ := sqlmock.New()
+		dialector := postgres.New(postgres.Config{
+			Conn:       mockDB,
+			DriverName: "postgres",
+		})
+		db, _ := gorm.Open(dialector, &gorm.Config{})
+		customCtx := &common.CustomContext{
+			Database: db,
+		}
+		srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &Resolver{}}))
+		ctx := common.CreateContext(customCtx, srv)
+
+		// Create a GraphQL client
+		gql := client.New(ctx)
+
+		// Define the response structure
+		resp := struct {
+			GetVersions []*model.Version
+		}{}
+
+		// Construct the GraphQL subscription query
+		q := `subscription getVersions {
+			getVersions(id: "1") {
+				version
+			}
+		}`
+
+		// Create a channel to receive the versions
+		versionsCh := make(chan []*model.Version)
+
+		// Start the subscription in a goroutine
+		go func() {
+			err := gql.Post(q, &resp)
+			require.NoError(t, err)
+			versionsCh <- resp.GetVersions
+		}()
+
+		// Prepare the expected versions
+		expectedVersions := []*model.Version{
+			{Version: "1"},
+			{Version: "2"},
+			{Version: "3"},
+		}
+
+		// Prepare the mocked database rows
+		rows := sqlmock.NewRows([]string{"id", "spreadsheet_id", "version"}).
+			AddRow(1, "1", 1).
+			AddRow(2, "1", 2).
+			AddRow(3, "1", 3)
+
+		// Set up the mock expectations
+		mock.ExpectQuery(`SELECT \* FROM .+ WHERE spreadsheet_id = \$1`).WithArgs("1").WillReturnRows(rows)
+
+		// Wait for the versions to be received
+		receivedVersions := <-versionsCh
+
+		// Perform assertions on the received versions
+		require.NotNil(t, receivedVersions)
+		require.Equal(t, len(expectedVersions), len(receivedVersions))
+		for i, expectedVersion := range expectedVersions {
+			require.Equal(t, expectedVersion.Version, receivedVersions[i].Version)
+		}
+	})
+}

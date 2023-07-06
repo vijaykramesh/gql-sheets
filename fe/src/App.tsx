@@ -262,7 +262,7 @@ const App: FunctionComponent = (): React.ReactElement => {
                         <FormControl variant="outlined" style={{ width: 300 }} className="revert-select">
                             {dataVersionsSubscription.getVersions && (
                                 <Select
-                                    value={selectedVersion || dataVersionsSubscription.getVersions[dataVersionsSubscription.getVersions.length - 1].version}
+                                    value={selectedVersion || (dataVersionsSubscription.getVersions[dataVersionsSubscription.getVersions.length - 1] ? dataVersionsSubscription.getVersions[dataVersionsSubscription.getVersions.length - 1].version : Date.now()/1000)}
 
                                     onChange={handleVersionChange}
                                 >
