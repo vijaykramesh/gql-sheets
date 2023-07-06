@@ -29,9 +29,12 @@ extend type Query {
     getVersions(id: String!): [Version!]!
 }
 
-
 extend type Mutation {
     createSpreadsheet(input: NewSpreadsheet!): Spreadsheet!
     updateSpreadsheet(id: String!, input: UpdateSpreadsheet!): Spreadsheet!
     revertSpreadsheet(id: String!, version: String!): Spreadsheet!
+}
+
+extend type Subscription {
+    getVersions(id: String!): [Version!]!
 }

@@ -17,7 +17,7 @@ import 'ag-grid-community/styles/ag-theme-alpine.css';
 
 import {
     GET_CELLS_BY_SPREADSHEET_ID, GET_CELLS_BY_SPREADSHEET_ID_SUBSCRIPTION,
-    GET_SPREADSHEET, GET_VERSIONS_BY_SPREADSHEET_ID, REVERT_SPREADSHEET_TO_VERSION,
+    GET_SPREADSHEET, GET_VERSIONS_BY_SPREADSHEET_ID, GET_VERSIONS_SUBSCRIPTION, REVERT_SPREADSHEET_TO_VERSION,
     UPDATE_CELL_BY_SPREADSHEET_ID_COLUMN_AND_ROW,
     UPDATE_SPREADSHEET
 } from './graphqlQueries';
@@ -68,9 +68,11 @@ const App: FunctionComponent = (): React.ReactElement => {
 
     );
 
-    // useQuery to GET_VERSIONS_BY_SPREADSHEET_ID
-    const {loading:loadingVersion, data:dataVersion} = useQuery(GET_VERSIONS_BY_SPREADSHEET_ID,{ variables: { spreadsheetId: "1" } })  ;
-
+    const {data: dataVersionsSubscription, loading: loadingVersionsSubscription} = useSubscription(
+        GET_VERSIONS_SUBSCRIPTION,
+        { variables: { spreadsheetId: "1" } } // todo get spreadsheet id from somewhere
+    );
+    
     const containerStyle = useMemo(() => ({ width: '100%', height: '100%' }), []);
     const gridStyle = useMemo(() => ({ height: '800px', width: '90%', padding: '50px' }), []);
     const [editModeColumnAndRow, setEditModeColumnAndRow] = useState<{column: string, row: number} | null>(null);
@@ -144,12 +146,7 @@ const App: FunctionComponent = (): React.ReactElement => {
         }
     }, [data, dataSpreadsheet, editModeColumnAndRow]);
 
-    useEffect(() => {
-        // check dataVersions and build a select box with the versions
-        if (dataVersion) {
-            console.log("DV", dataVersion);
-        }
-    }   , [dataVersion]);
+
 
     useEffect(() => {
         if (data && dataSpreadsheet) {
@@ -249,7 +246,7 @@ const App: FunctionComponent = (): React.ReactElement => {
         columnHoverHighlight: true,
     };
 
-    if (loading || loadingSpreadsheet || loadingVersion) return <p>loading...</p>;
+    if (loading || loadingSpreadsheet || loadingVersionsSubscription) return <p>loading...</p>;
     if (!data && !dataSpreadsheet) return <p>Not found</p>;
     const theme = createTheme();
     return (
@@ -263,13 +260,13 @@ const App: FunctionComponent = (): React.ReactElement => {
                 <div className="container">
                     <div className="revert-section" style={{ marginLeft: 'auto', width: '300px', marginRight:'50px', padding:'20px' }}>
                         <FormControl variant="outlined" style={{ width: 300 }} className="revert-select">
-                            {dataVersion.getVersions && (
+                            {dataVersionsSubscription.getVersions && (
                                 <Select
-                                    value={selectedVersion || dataVersion.getVersions[dataVersion.getVersions.length - 1].version}
+                                    value={selectedVersion || dataVersionsSubscription.getVersions[dataVersionsSubscription.getVersions.length - 1].version}
 
                                     onChange={handleVersionChange}
                                 >
-                                    {dataVersion.getVersions.map((version, index) => (
+                                    {dataVersionsSubscription.getVersions.map((version, index) => (
                                         <MenuItem key={index} value={version.version}>
                                             {new Date(version.version*1).toLocaleString()}
                                         </MenuItem>

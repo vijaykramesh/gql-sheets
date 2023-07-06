@@ -7,11 +7,11 @@ package resolvers
 import (
 	"context"
 	"fmt"
-	"strconv"
-
 	"github.com/vijaykramesh/gql-sheets/graph/common"
 	"github.com/vijaykramesh/gql-sheets/graph/generated"
 	"github.com/vijaykramesh/gql-sheets/graph/model"
+	"strconv"
+	"time"
 )
 
 // CreateSpreadsheet is the resolver for the createSpreadsheet field.
@@ -128,6 +128,36 @@ func (r *spreadsheetResolver) ID(ctx context.Context, obj *model.Spreadsheet) (s
 		return "", fmt.Errorf("error getting spreadsheet: %v", err)
 	}
 	return strconv.FormatUint(uint64(spreadsheet.ID), 10), nil
+}
+
+// GetVersions is the resolver for the getVersions field.
+func (r *subscriptionResolver) GetVersions(ctx context.Context, id string) (<-chan []*model.Version, error) {
+	ch := make(chan []*model.Version)
+	go func() {
+		for {
+			context := common.GetContext(ctx)
+			time.Sleep(1 * time.Second)
+			var versions []*model.Version
+			var cells []*model.Cell
+			err := context.Database.Where("spreadsheet_id = ?", id).Find(&cells).Error
+			if err != nil {
+				panic(fmt.Errorf("error getting cells: %v", err))
+			}
+			seenVersions := make(map[uint64]bool)
+			for _, cell := range cells {
+				if _, ok := seenVersions[cell.Version]; ok {
+					continue
+				}
+				seenVersions[cell.Version] = true
+				version := &model.Version{
+					Version: strconv.FormatUint(cell.Version, 10),
+				}
+				versions = append(versions, version)
+			}
+			ch <- versions
+		}
+	}()
+	return ch, nil
 }
 
 // Spreadsheet returns generated.SpreadsheetResolver implementation.

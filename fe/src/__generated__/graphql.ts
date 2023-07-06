@@ -30,6 +30,7 @@ export type Mutation = {
   __typename?: 'Mutation';
   createCell: Cell;
   createSpreadsheet: Spreadsheet;
+  revertSpreadsheet: Spreadsheet;
   updateCell: Cell;
   updateCellBySpreadsheetIdColumnAndRow: Cell;
   updateSpreadsheet: Spreadsheet;
@@ -43,6 +44,12 @@ export type MutationCreateCellArgs = {
 
 export type MutationCreateSpreadsheetArgs = {
   input: NewSpreadsheet;
+};
+
+
+export type MutationRevertSpreadsheetArgs = {
+  id: Scalars['String']['input'];
+  version: Scalars['String']['input'];
 };
 
 
@@ -119,11 +126,17 @@ export type Spreadsheet = {
 export type Subscription = {
   __typename?: 'Subscription';
   getCellsBySpreadsheetId: Array<Cell>;
+  getVersions: Array<Version>;
 };
 
 
 export type SubscriptionGetCellsBySpreadsheetIdArgs = {
   spreadsheetId: Scalars['String']['input'];
+};
+
+
+export type SubscriptionGetVersionsArgs = {
+  id: Scalars['String']['input'];
 };
 
 export type UpdateCell = {
