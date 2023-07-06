@@ -1,4 +1,4 @@
-name: CI
+name: yarn lint
 on: push
 jobs:
   build:
