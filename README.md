@@ -1,5 +1,5 @@
 # gql-sheets
-![Coverage](https://img.shields.io/badge/Coverage-60.9%25-yellow)
+![Coverage](https://img.shields.io/badge/Coverage-61.4%25-yellow)
 
 
 ## About
@@ -22,6 +22,9 @@ The backend is in Golang using gqlgen and gorm, and the frontend is in React usi
 - `=A1` reference lookup
 - `=SUM(A1:A5)` sum of range
 - `=AVERAGE(A1:A5)` average of range
+- `=MAX(A1:A5)` max of range
+- `=MIN(A1:A5)` min of range
+- `=COUNT(A1:A5)` count of range
 
 ## Local Setup
 

@@ -50,7 +50,15 @@ func (c *Cell) ComputeValueFromRaw(otherCells []Cell) (string, error) {
 			return computedValue, nil
 		}
 		// =SUM(A1:A3) style formula, compute the value
-		if len(tokens) == 3 && tokens[0].TType == "Function" && tokens[0].TSubType == "Start" && tokens[0].TValue == "SUM" && tokens[1].TType == "Operand" && tokens[1].TSubType == "Range" && tokens[2].TType == "Function" && tokens[2].TSubType == "Stop" && tokens[2].TValue == "" {
+		if len(tokens) == 3 &&
+			tokens[0].TType == "Function" &&
+			tokens[0].TSubType == "Start" &&
+			tokens[0].TValue == "SUM" &&
+			tokens[1].TType == "Operand" &&
+			tokens[1].TSubType == "Range" &&
+			tokens[2].TType == "Function" &&
+			tokens[2].TSubType == "Stop" &&
+			tokens[2].TValue == "" {
 			computedValue, lookupErr := sumRange(tokens, otherCells)
 			if lookupErr != nil {
 				return "ERROR", lookupErr
@@ -59,14 +67,72 @@ func (c *Cell) ComputeValueFromRaw(otherCells []Cell) (string, error) {
 		}
 
 		// =AVERAGE(A1:A3) style formula, compute the value
-		if len(tokens) == 3 && tokens[0].TType == "Function" && tokens[0].TSubType == "Start" && tokens[0].TValue == "AVERAGE" && tokens[1].TType == "Operand" && tokens[1].TSubType == "Range" && tokens[2].TType == "Function" && tokens[2].TSubType == "Stop" && tokens[2].TValue == "" {
+		if len(tokens) == 3 &&
+			tokens[0].TType == "Function" &&
+			tokens[0].TSubType == "Start" &&
+			tokens[0].TValue == "AVERAGE" &&
+			tokens[1].TType == "Operand" &&
+			tokens[1].TSubType == "Range" &&
+			tokens[2].TType == "Function" &&
+			tokens[2].TSubType == "Stop" &&
+			tokens[2].TValue == "" {
 			computedValue, lookupErr := averageRange(tokens, otherCells)
 			if lookupErr != nil {
 				return "ERROR", lookupErr
 			}
 			return computedValue, nil
 		}
-		return c.RawValue, nil
+
+		// =MAX(A1:A4) style formula, compute the value
+		if len(tokens) == 3 &&
+			tokens[0].TType == "Function" &&
+			tokens[0].TSubType == "Start" &&
+			tokens[0].TValue == "MAX" &&
+			tokens[1].TType == "Operand" &&
+			tokens[1].TSubType == "Range" &&
+			tokens[2].TType == "Function" &&
+			tokens[2].TSubType == "Stop" &&
+			tokens[2].TValue == "" {
+			computedValue, lookupErr := maxRange(tokens, otherCells)
+			if lookupErr != nil {
+				return "ERROR", lookupErr
+			}
+			return computedValue, nil
+		}
+
+		// =MAX(A1:A4) style formula, compute the value
+		if len(tokens) == 3 &&
+			tokens[0].TType == "Function" &&
+			tokens[0].TSubType == "Start" &&
+			tokens[0].TValue == "MIN" &&
+			tokens[1].TType == "Operand" &&
+			tokens[1].TSubType == "Range" &&
+			tokens[2].TType == "Function" &&
+			tokens[2].TSubType == "Stop" &&
+			tokens[2].TValue == "" {
+			computedValue, lookupErr := minRange(tokens, otherCells)
+			if lookupErr != nil {
+				return "ERROR", lookupErr
+			}
+			return computedValue, nil
+		}
+		// =COUNT(A1:A3) style formula, compute the value
+		if len(tokens) == 3 &&
+			tokens[0].TType == "Function" &&
+			tokens[0].TSubType == "Start" &&
+			tokens[0].TValue == "COUNT" &&
+			tokens[1].TType == "Operand" &&
+			tokens[1].TSubType == "Range" &&
+			tokens[2].TType == "Function" &&
+			tokens[2].TSubType == "Stop" &&
+			tokens[2].TValue == "" {
+			computedValue, lookupErr := countRange(tokens, otherCells)
+			if lookupErr != nil {
+				return "ERROR", lookupErr
+			}
+			return computedValue, nil
+		}
+
 	}
 	return c.RawValue, nil
 }
@@ -197,6 +263,65 @@ func sumRange(tokens []efp.Token, otherCells []Cell) (string, error) {
 		}
 	}
 	return strconv.FormatInt(sum, 10), nil
+}
+func maxRange(tokens []efp.Token, otherCells []Cell) (string, error) {
+	var max int64
+	isFirstValue := true
+
+	for _, cell := range otherCells {
+		check, err := checkIfCellInRange(&cell, tokens[1].TValue)
+		if err != nil {
+			return "", err
+		}
+		if check {
+			cellValue, err := strconv.ParseInt(cell.ComputedValue, 10, 64)
+			if err == nil {
+				if isFirstValue || cellValue > max {
+					max = cellValue
+					isFirstValue = false
+				}
+			}
+		}
+	}
+
+	return strconv.FormatInt(max, 10), nil
+}
+
+func minRange(tokens []efp.Token, otherCells []Cell) (string, error) {
+	var min int64
+	isFirstValue := true
+
+	for _, cell := range otherCells {
+		check, err := checkIfCellInRange(&cell, tokens[1].TValue)
+		if err != nil {
+			return "", err
+		}
+		if check {
+			cellValue, err := strconv.ParseInt(cell.ComputedValue, 10, 64)
+			if err == nil {
+				if isFirstValue || cellValue < min {
+					min = cellValue
+					isFirstValue = false
+				}
+			}
+		}
+	}
+
+	return strconv.FormatInt(min, 10), nil
+}
+
+func countRange(tokens []efp.Token, otherCells []Cell) (string, error) {
+	count := int64(0)
+	for _, cell := range otherCells {
+		check, err := checkIfCellInRange(&cell, tokens[1].TValue)
+		if err != nil {
+			return "", err
+		}
+		if check {
+			count += 1
+		}
+	}
+	return strconv.FormatInt(count, 10), nil
 }
 
 func checkIfCellInRange(c *Cell, tvalue string) (bool, error) {
