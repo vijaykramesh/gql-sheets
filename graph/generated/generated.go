@@ -71,6 +71,7 @@ type ComplexityRoot struct {
 		GetCell                 func(childComplexity int, id string) int
 		GetCellsBySpreadsheetID func(childComplexity int, spreadsheetID string) int
 		GetSpreadsheet          func(childComplexity int, id string) int
+		GetVersions             func(childComplexity int, id string) int
 		Spreadsheets            func(childComplexity int) int
 	}
 
@@ -83,6 +84,10 @@ type ComplexityRoot struct {
 
 	Subscription struct {
 		GetCellsBySpreadsheetID func(childComplexity int, spreadsheetID string) int
+	}
+
+	Version struct {
+		Version func(childComplexity int) int
 	}
 }
 
@@ -105,6 +110,7 @@ type QueryResolver interface {
 	GetCellsBySpreadsheetID(ctx context.Context, spreadsheetID string) ([]*model.Cell, error)
 	Spreadsheets(ctx context.Context) ([]*model.Spreadsheet, error)
 	GetSpreadsheet(ctx context.Context, id string) (*model.Spreadsheet, error)
+	GetVersions(ctx context.Context, id string) ([]*model.Version, error)
 }
 type SpreadsheetResolver interface {
 	ID(ctx context.Context, obj *model.Spreadsheet) (string, error)
@@ -280,6 +286,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.GetSpreadsheet(childComplexity, args["id"].(string)), true
 
+	case "Query.getVersions":
+		if e.complexity.Query.GetVersions == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getVersions_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetVersions(childComplexity, args["id"].(string)), true
+
 	case "Query.spreadsheets":
 		if e.complexity.Query.Spreadsheets == nil {
 			break
@@ -326,6 +344,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Subscription.GetCellsBySpreadsheetID(childComplexity, args["spreadsheetId"].(string)), true
+
+	case "Version.version":
+		if e.complexity.Version.Version == nil {
+			break
+		}
+
+		return e.complexity.Version.Version(childComplexity), true
 
 	}
 	return 0, false
@@ -503,6 +528,9 @@ type Spreadsheet {
     columnCount: Int!
 }
 
+type Version {
+    version: String!
+}
 
 input NewSpreadsheet {
     name: String!
@@ -519,6 +547,7 @@ input UpdateSpreadsheet {
 extend type Query {
     spreadsheets: [Spreadsheet!]!
     getSpreadsheet(id: String!): Spreadsheet!
+    getVersions(id: String!): [Version!]!
 }
 
 
@@ -700,6 +729,21 @@ func (ec *executionContext) field_Query_getCellsBySpreadsheetId_args(ctx context
 }
 
 func (ec *executionContext) field_Query_getSpreadsheet_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_getVersions_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -1746,6 +1790,65 @@ func (ec *executionContext) fieldContext_Query_getSpreadsheet(ctx context.Contex
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_getVersions(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_getVersions(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetVersions(rctx, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Version)
+	fc.Result = res
+	return ec.marshalNVersion2ᚕᚖgithubᚗcomᚋvijaykrameshᚋgqlᚑsheetsᚋgraphᚋmodelᚐVersionᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_getVersions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "version":
+				return ec.fieldContext_Version_version(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Version", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_getVersions_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query___type(ctx, field)
 	if err != nil {
@@ -2132,6 +2235,50 @@ func (ec *executionContext) fieldContext_Subscription_getCellsBySpreadsheetId(ct
 	if fc.Args, err = ec.field_Subscription_getCellsBySpreadsheetId_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Version_version(ctx context.Context, field graphql.CollectedField, obj *model.Version) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Version_version(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Version, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Version_version(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Version",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
 	}
 	return fc, nil
 }
@@ -4461,6 +4608,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "getVersions":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getVersions(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "__type":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___type(ctx, field)
@@ -4595,6 +4764,45 @@ func (ec *executionContext) _Subscription(ctx context.Context, sel ast.Selection
 	default:
 		panic("unknown field " + strconv.Quote(fields[0].Name))
 	}
+}
+
+var versionImplementors = []string{"Version"}
+
+func (ec *executionContext) _Version(ctx context.Context, sel ast.SelectionSet, obj *model.Version) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, versionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Version")
+		case "version":
+			out.Values[i] = ec._Version_version(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
 }
 
 var __DirectiveImplementors = []string{"__Directive"}
@@ -5102,6 +5310,60 @@ func (ec *executionContext) unmarshalNUpdateCell2githubᚗcomᚋvijaykrameshᚋg
 func (ec *executionContext) unmarshalNUpdateSpreadsheet2githubᚗcomᚋvijaykrameshᚋgqlᚑsheetsᚋgraphᚋmodelᚐUpdateSpreadsheet(ctx context.Context, v interface{}) (model.UpdateSpreadsheet, error) {
 	res, err := ec.unmarshalInputUpdateSpreadsheet(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNVersion2ᚕᚖgithubᚗcomᚋvijaykrameshᚋgqlᚑsheetsᚋgraphᚋmodelᚐVersionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Version) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNVersion2ᚖgithubᚗcomᚋvijaykrameshᚋgqlᚑsheetsᚋgraphᚋmodelᚐVersion(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNVersion2ᚖgithubᚗcomᚋvijaykrameshᚋgqlᚑsheetsᚋgraphᚋmodelᚐVersion(ctx context.Context, sel ast.SelectionSet, v *model.Version) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Version(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {

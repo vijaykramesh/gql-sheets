@@ -78,6 +78,29 @@ func (r *queryResolver) GetSpreadsheet(ctx context.Context, id string) (*model.S
 	return &spreadsheet, nil
 }
 
+// GetVersions is the resolver for the getVersions field.
+func (r *queryResolver) GetVersions(ctx context.Context, id string) ([]*model.Version, error) {
+	context := common.GetContext(ctx)
+	var versions []*model.Version
+	var cells []*model.Cell
+	err := context.Database.Where("spreadsheet_id = ?", id).Find(&cells).Error
+	if err != nil {
+		return nil, fmt.Errorf("error getting cells: %v", err)
+	}
+	seenVersions := make(map[uint64]bool)
+	for _, cell := range cells {
+		if _, ok := seenVersions[cell.Version]; ok {
+			continue
+		}
+		seenVersions[cell.Version] = true
+		version := &model.Version{
+			Version: strconv.FormatUint(cell.Version, 10),
+		}
+		versions = append(versions, version)
+	}
+	return versions, nil
+}
+
 // ID is the resolver for the id field.
 func (r *spreadsheetResolver) ID(ctx context.Context, obj *model.Spreadsheet) (string, error) {
 	// TODO: this might be dumb, we maybe should just read it off obj

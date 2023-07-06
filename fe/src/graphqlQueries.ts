@@ -65,3 +65,11 @@ export const GET_CELLS_BY_SPREADSHEET_ID_SUBSCRIPTION = gql`
         }
     }
 `;
+
+export const GET_VERSIONS_BY_SPREADSHEET_ID = gql(/* GraphQL */ `
+    query getVersionsBySpreadsheetId($spreadsheetId: String!)      {
+        getVersions(id: $spreadsheetId) {
+            version
+        }
+    }
+`);

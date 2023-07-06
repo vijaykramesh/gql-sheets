@@ -8,7 +8,7 @@ import 'ag-grid-community/styles/ag-theme-alpine.css';
 
 import {
     GET_CELLS_BY_SPREADSHEET_ID, GET_CELLS_BY_SPREADSHEET_ID_SUBSCRIPTION,
-    GET_SPREADSHEET,
+    GET_SPREADSHEET, GET_VERSIONS_BY_SPREADSHEET_ID,
     UPDATE_CELL_BY_SPREADSHEET_ID_COLUMN_AND_ROW,
     UPDATE_SPREADSHEET
 } from './graphqlQueries';
@@ -33,14 +33,14 @@ const App: FunctionComponent = (): React.ReactElement => {
     const [updateCell, { data: dataUpdate, loading: loadingUpdate, error }] = useMutation(
         UPDATE_CELL_BY_SPREADSHEET_ID_COLUMN_AND_ROW,
         {
-            refetchQueries: [{ query: GET_CELLS_BY_SPREADSHEET_ID }],
+            refetchQueries: [{ query: GET_CELLS_BY_SPREADSHEET_ID }, { query: GET_VERSIONS_BY_SPREADSHEET_ID, variables: { spreadsheetId: "1"}}],
         }
     );
 
     const [updateSpreadsheet, { data: dataUpdateSpreadsheet, loading: loadingUpdateSpreadsheet, error: errorUpdateSpreadsheet }] = useMutation(
         UPDATE_SPREADSHEET,
         {
-            refetchQueries: [{query: GET_SPREADSHEET}, {query: GET_CELLS_BY_SPREADSHEET_ID}],
+            refetchQueries: [{query: GET_SPREADSHEET}, {query: GET_CELLS_BY_SPREADSHEET_ID}, { query: GET_VERSIONS_BY_SPREADSHEET_ID,  variables: { spreadsheetId: "1"}}],
         }
     );
 
@@ -51,6 +51,9 @@ const App: FunctionComponent = (): React.ReactElement => {
         { variables: { spreadsheetId: "1" } } // todo get spreadsheet id from somewhere
 
     );
+
+    // useQuery to GET_VERSIONS_BY_SPREADSHEET_ID
+    const {loading:loadingVersion, data:dataVersion} = useQuery(GET_VERSIONS_BY_SPREADSHEET_ID,{ variables: { spreadsheetId: "1" } })  ;
 
     const containerStyle = useMemo(() => ({ width: '100%', height: '100%' }), []);
     const gridStyle = useMemo(() => ({ height: '800px', width: '90%', padding: '50px' }), []);
@@ -98,6 +101,13 @@ const App: FunctionComponent = (): React.ReactElement => {
             console.log('dataSpreadsheet is null');
         }
     }, [data, dataSpreadsheet, editModeColumnAndRow]);
+
+    useEffect(() => {
+        // check dataVersions and build a select box with the versions
+        if (dataVersion) {
+            console.log("DV", dataVersion);
+        }
+    }   , [dataVersion]);
 
     useEffect(() => {
         if (data && dataSpreadsheet) {
@@ -197,7 +207,7 @@ const App: FunctionComponent = (): React.ReactElement => {
         columnHoverHighlight: true,
     };
 
-    if (loading || loadingSpreadsheet) return <p>loading...</p>;
+    if (loading || loadingSpreadsheet || loadingVersion) return <p>loading...</p>;
     if (!data && !dataSpreadsheet) return <p>Not found</p>;
 
     return (
@@ -206,6 +216,17 @@ const App: FunctionComponent = (): React.ReactElement => {
                 gql-sheets
             </header>
             <div style={containerStyle}>
+                <div> <span>Revert to an earlier version:</span>
+                    {dataVersion.getVersions && (
+                        <select>
+                            {dataVersion.getVersions.map((version, index) => (
+                                <option key={index} value={version.version}       selected={index === dataVersion.getVersions.length - 1}>
+                                    {version.version}
+                                </option>
+                            ))}
+                        </select>
+                    )}
+                </div>
                 <div style={gridStyle} className="ag-theme-alpine">
                     <AgGridReact<Cell>
                         gridOptions={gridOptions}

@@ -7,6 +7,9 @@ type Spreadsheet {
     columnCount: Int!
 }
 
+type Version {
+    version: String!
+}
 
 input NewSpreadsheet {
     name: String!
@@ -23,6 +26,7 @@ input UpdateSpreadsheet {
 extend type Query {
     spreadsheets: [Spreadsheet!]!
     getSpreadsheet(id: String!): Spreadsheet!
+    getVersions(id: String!): [Version!]!
 }
 
 
