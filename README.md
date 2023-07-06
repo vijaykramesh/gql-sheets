@@ -12,7 +12,8 @@ The backend is in Golang using gqlgen and gorm, and the frontend is in React usi
 
 ## Features
 - GraphQL API
-- Websocket support for live updates
+- Websocket support for collaborative live updates
+- Automatic versioning & revert
 - Formula support
 - Markdown support
 - Prometheus metrics
