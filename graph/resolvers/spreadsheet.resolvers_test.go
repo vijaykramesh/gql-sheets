@@ -342,3 +342,55 @@ func TestSubscriptionResolver_GetVersions(t *testing.T) {
 		}
 	})
 }
+
+// TODO: this should really test that the dependent cells get deleted_at set accordingly
+func TestMutationResolver_RevertSpreadsheet(t *testing.T) {
+	t.Run("should revert a spreadsheet to a specific version", func(t *testing.T) {
+		// Mock the database and prepare expectations
+		mockDB, mock, _ := sqlmock.New()
+		dialector := postgres.New(postgres.Config{
+			Conn:       mockDB,
+			DriverName: "postgres",
+		})
+		mock.ExpectQuery(`SELECT \* FROM .+ WHERE id = \$1`).WithArgs("1").
+			WillReturnRows(sqlmock.NewRows([]string{"id", "name", "row_count", "column_count"}).AddRow(1, "Test Spreadsheet", 10, 5))
+		mock.ExpectBegin()
+		mock.ExpectExec(`UPDATE .+ SET "deleted_at"=\$1 .+`).WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnResult(sqlmock.NewResult(1, 1))
+		mock.ExpectCommit()
+		mock.ExpectQuery(`SELECT \* FROM .+ WHERE id = \$1`).WithArgs(1).
+			WillReturnRows(sqlmock.NewRows([]string{"id", "name", "row_count", "column_count"}).AddRow(1, "Test Spreadsheet", 10, 5))
+		// Create a test context with the mocked database
+		db, _ := gorm.Open(dialector, &gorm.Config{})
+		customCtx := &common.CustomContext{
+			Database: db,
+		}
+		srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &Resolver{}}))
+		ctx := common.CreateContext(customCtx, srv)
+
+		// Create a GraphQL client
+		gql := client.New(ctx)
+
+		// Define the response structure
+		resp := struct {
+			RevertSpreadsheet *model.Spreadsheet
+		}{}
+
+		// Construct the GraphQL query
+		q := `mutation revertSpreadsheet {
+			revertSpreadsheet(id: "1", version: "2") {
+				name
+				rowCount
+				columnCount
+			}
+		}`
+
+		// Send the GraphQL request and decode the response
+		gql.MustPost(q, &resp)
+
+		// Perform assertions on the response
+		require.NotNil(t, resp.RevertSpreadsheet)
+		require.Equal(t, "Test Spreadsheet", resp.RevertSpreadsheet.Name)
+		require.Equal(t, 10, resp.RevertSpreadsheet.RowCount)
+		require.Equal(t, 5, resp.RevertSpreadsheet.ColumnCount)
+	})
+}
