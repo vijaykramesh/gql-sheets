@@ -56,6 +56,23 @@ func (r *mutationResolver) UpdateSpreadsheet(ctx context.Context, id string, inp
 	return &spreadsheet, nil
 }
 
+// RevertSpreadsheet is the resolver for the revertSpreadsheet field.
+func (r *mutationResolver) RevertSpreadsheet(ctx context.Context, id string, version string) (*model.Spreadsheet, error) {
+	context := common.GetContext(ctx)
+	var spreadsheet model.Spreadsheet
+	err := context.Database.Where("id = ?", id).First(&spreadsheet).Error
+	if err != nil {
+		return nil, fmt.Errorf("error getting spreadsheet: %v", err)
+	}
+	// delete all cells with version > version
+	err = context.Database.Where("spreadsheet_id = ? AND version > ?", id, version).Delete(&model.Cell{}).Error
+	if err != nil {
+		return nil, fmt.Errorf("error deleting cells: %v", err)
+	}
+	// return
+	return &spreadsheet, nil
+}
+
 // Spreadsheets is the resolver for the spreadsheets field.
 func (r *queryResolver) Spreadsheets(ctx context.Context) ([]*model.Spreadsheet, error) {
 	context := common.GetContext(ctx)

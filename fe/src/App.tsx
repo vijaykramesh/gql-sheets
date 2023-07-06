@@ -2,13 +2,22 @@ import React, { useState, useEffect, useMemo, useCallback, FunctionComponent } f
 import {useQuery, useMutation, useSubscription} from '@apollo/client';
 import { AgGridReact } from 'ag-grid-react';
 import { ColumnApi, GridReadyEvent, ModuleRegistry, CellEditingStartedEvent, CellEditingStoppedEvent, CellValueChangedEvent, ColDef } from 'ag-grid-community';
-
+import {
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    Button,
+    createTheme,
+    ThemeProvider,
+    FormControl, InputLabel, MenuItem, Select, Typography
+} from '@mui/material';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
 
 import {
     GET_CELLS_BY_SPREADSHEET_ID, GET_CELLS_BY_SPREADSHEET_ID_SUBSCRIPTION,
-    GET_SPREADSHEET, GET_VERSIONS_BY_SPREADSHEET_ID,
+    GET_SPREADSHEET, GET_VERSIONS_BY_SPREADSHEET_ID, REVERT_SPREADSHEET_TO_VERSION,
     UPDATE_CELL_BY_SPREADSHEET_ID_COLUMN_AND_ROW,
     UPDATE_SPREADSHEET
 } from './graphqlQueries';
@@ -44,6 +53,13 @@ const App: FunctionComponent = (): React.ReactElement => {
         }
     );
 
+    const [revertVersion, { data: dataRevertVersion, loading: loadingRevertVersion, error: errorRevertVersion }] = useMutation(
+        REVERT_SPREADSHEET_TO_VERSION,
+        {
+            refetchQueries: [{query: GET_SPREADSHEET}, {query: GET_CELLS_BY_SPREADSHEET_ID}, { query: GET_VERSIONS_BY_SPREADSHEET_ID,  variables: { spreadsheetId: "1"}}],
+        }
+    );
+
     const {data: dataSubscription, loading: loadingSubscription} = useSubscription(
 
         GET_CELLS_BY_SPREADSHEET_ID_SUBSCRIPTION,
@@ -65,6 +81,29 @@ const App: FunctionComponent = (): React.ReactElement => {
         { field: 'B' },
         { field: 'C' },
     ]);
+
+    // VERSION SELECTOR
+    const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
+    const [selectedVersion, setSelectedVersion] = useState('');
+
+    const handleVersionChange = (event) => {
+        const newVersion = event.target.value;
+        setSelectedVersion(newVersion);
+        setIsConfirmationOpen(true); // Open the confirmation modal
+    };
+
+
+    const handleConfirmation = () => {
+        // Perform the desired action (e.g., console.log)
+        revertVersion({ variables: { spreadsheetId: "1", version: selectedVersion } });
+        setIsConfirmationOpen(false); // Close the confirmation modal
+    };
+
+    const handleCloseConfirmation = () => {
+        setIsConfirmationOpen(false); // Close the confirmation modal
+    };
+
+
 
     const defaultColDef = useMemo<ColDef>(() => {
         return {
@@ -209,23 +248,48 @@ const App: FunctionComponent = (): React.ReactElement => {
 
     if (loading || loadingSpreadsheet || loadingVersion) return <p>loading...</p>;
     if (!data && !dataSpreadsheet) return <p>Not found</p>;
-
+    const theme = createTheme();
     return (
-        <div className="App" style={{ height: '100%' }}>
-            <header className="App-header" style={{ height: '50px' }}>
-                gql-sheets
-            </header>
-            <div style={containerStyle}>
-                <div> <span>Revert to an earlier version:</span>
-                    {dataVersion.getVersions && (
-                        <select>
-                            {dataVersion.getVersions.map((version, index) => (
-                                <option key={index} value={version.version}       selected={index === dataVersion.getVersions.length - 1}>
-                                    {version.version}
-                                </option>
-                            ))}
-                        </select>
-                    )}
+        <ThemeProvider theme={theme}>
+            <div className="App" style={{ height: '100%' }}>
+                <header className="App-header" style={{ height: '50px' }}>
+                    gql-sheets
+                </header>
+                <div className="container">
+                    <div className="modal">
+                        <Dialog open={isConfirmationOpen} onClose={handleCloseConfirmation}>
+                            <DialogTitle>Confirmation</DialogTitle>
+                            <DialogContent>
+                                Are you sure you want to proceed?
+                            </DialogContent>
+                            <DialogActions>
+                                <Button onClick={handleCloseConfirmation} color="primary">
+                                    Cancel
+                                </Button>
+                                <Button onClick={handleConfirmation} color="primary" autoFocus>
+                                    OK
+                                </Button>
+                            </DialogActions>
+                        </Dialog>
+                    </div>
+                    <div className="revert-section">
+                        <Typography variant="h6">Revert to an earlier version:</Typography>
+                        <FormControl variant="outlined" style={{ width: 300 }} className="revert-select">
+                            {dataVersion.getVersions && (
+                                <Select
+                                    labelId="version-select-label"
+                                    value={selectedVersion || dataVersion.getVersions[dataVersion.getVersions.length - 1].version}
+                                    onChange={handleVersionChange}
+                                >
+                                    {dataVersion.getVersions.map((version, index) => (
+                                        <MenuItem key={index} value={version.version}>
+                                            {version.version}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            )}
+                        </FormControl>
+                    </div>
                 </div>
                 <div style={gridStyle} className="ag-theme-alpine">
                     <AgGridReact<Cell>
@@ -237,8 +301,10 @@ const App: FunctionComponent = (): React.ReactElement => {
                     ></AgGridReact>
                 </div>
             </div>
-        </div>
+        </ThemeProvider>
     );
+
+
 };
 
 export default App;

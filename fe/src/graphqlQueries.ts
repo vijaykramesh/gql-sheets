@@ -73,3 +73,14 @@ export const GET_VERSIONS_BY_SPREADSHEET_ID = gql(/* GraphQL */ `
         }
     }
 `);
+
+export const REVERT_SPREADSHEET_TO_VERSION = gql`
+    mutation revertSpreadsheet($spreadsheetId: String!, $version: String!) {
+        revertSpreadsheet(id: $spreadsheetId, version: $version) {
+            id
+            name
+            rowCount
+            columnCount
+        }
+    }
+`;
