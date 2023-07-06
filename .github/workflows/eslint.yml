@@ -8,4 +8,4 @@ jobs:
       - name: Install modules
         run: yarn
       - name: Run ESLint
-        run: cd fe && yarn run eslint . --ext .js,.jsx,.ts,.tsx
+        run: cd fe && npm install -g eslint && eslint . --ext .js,.jsx,.ts,.tsx
