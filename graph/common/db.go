@@ -2,6 +2,7 @@
 package common
 
 import (
+	extraClausePlugin "github.com/WinterYukky/gorm-extra-clause-plugin"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/plugin/prometheus"
@@ -31,6 +32,8 @@ func InitDb() (*gorm.DB, error) {
 		//	&prometheus.Postgres{VariableNames: []string{"Threads_running"}},
 		//},
 	}))
+
+	db.Use(extraClausePlugin.New())
 
 	if err != nil {
 		panic("failed to connect database")

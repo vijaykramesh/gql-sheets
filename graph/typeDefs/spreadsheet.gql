@@ -7,6 +7,9 @@ type Spreadsheet {
     columnCount: Int!
 }
 
+type Version {
+    version: String!
+}
 
 input NewSpreadsheet {
     name: String!
@@ -23,10 +26,15 @@ input UpdateSpreadsheet {
 extend type Query {
     spreadsheets: [Spreadsheet!]!
     getSpreadsheet(id: String!): Spreadsheet!
+    getVersions(id: String!): [Version!]!
 }
-
 
 extend type Mutation {
     createSpreadsheet(input: NewSpreadsheet!): Spreadsheet!
     updateSpreadsheet(id: String!, input: UpdateSpreadsheet!): Spreadsheet!
+    revertSpreadsheet(id: String!, version: String!): Spreadsheet!
+}
+
+extend type Subscription {
+    getVersions(id: String!): [Version!]!
 }

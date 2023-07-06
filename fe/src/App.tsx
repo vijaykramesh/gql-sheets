@@ -2,13 +2,22 @@ import React, { useState, useEffect, useMemo, useCallback, FunctionComponent } f
 import {useQuery, useMutation, useSubscription} from '@apollo/client';
 import { AgGridReact } from 'ag-grid-react';
 import { ColumnApi, GridReadyEvent, ModuleRegistry, CellEditingStartedEvent, CellEditingStoppedEvent, CellValueChangedEvent, ColDef } from 'ag-grid-community';
-
+import {
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    Button,
+    createTheme,
+    ThemeProvider,
+    FormControl, InputLabel, MenuItem, Select, Typography
+} from '@mui/material';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
 
 import {
     GET_CELLS_BY_SPREADSHEET_ID, GET_CELLS_BY_SPREADSHEET_ID_SUBSCRIPTION,
-    GET_SPREADSHEET,
+    GET_SPREADSHEET, GET_VERSIONS_BY_SPREADSHEET_ID, GET_VERSIONS_SUBSCRIPTION, REVERT_SPREADSHEET_TO_VERSION,
     UPDATE_CELL_BY_SPREADSHEET_ID_COLUMN_AND_ROW,
     UPDATE_SPREADSHEET
 } from './graphqlQueries';
@@ -33,14 +42,21 @@ const App: FunctionComponent = (): React.ReactElement => {
     const [updateCell, { data: dataUpdate, loading: loadingUpdate, error }] = useMutation(
         UPDATE_CELL_BY_SPREADSHEET_ID_COLUMN_AND_ROW,
         {
-            refetchQueries: [{ query: GET_CELLS_BY_SPREADSHEET_ID }],
+            refetchQueries: [{ query: GET_CELLS_BY_SPREADSHEET_ID }, { query: GET_VERSIONS_BY_SPREADSHEET_ID, variables: { spreadsheetId: "1"}}],
         }
     );
 
     const [updateSpreadsheet, { data: dataUpdateSpreadsheet, loading: loadingUpdateSpreadsheet, error: errorUpdateSpreadsheet }] = useMutation(
         UPDATE_SPREADSHEET,
         {
-            refetchQueries: [{query: GET_SPREADSHEET}, {query: GET_CELLS_BY_SPREADSHEET_ID}],
+            refetchQueries: [{query: GET_SPREADSHEET}, {query: GET_CELLS_BY_SPREADSHEET_ID}, { query: GET_VERSIONS_BY_SPREADSHEET_ID,  variables: { spreadsheetId: "1"}}],
+        }
+    );
+
+    const [revertVersion, { data: dataRevertVersion, loading: loadingRevertVersion, error: errorRevertVersion }] = useMutation(
+        REVERT_SPREADSHEET_TO_VERSION,
+        {
+            refetchQueries: [{query: GET_SPREADSHEET}, {query: GET_CELLS_BY_SPREADSHEET_ID}, { query: GET_VERSIONS_BY_SPREADSHEET_ID,  variables: { spreadsheetId: "1"}}],
         }
     );
 
@@ -52,6 +68,11 @@ const App: FunctionComponent = (): React.ReactElement => {
 
     );
 
+    const {data: dataVersionsSubscription, loading: loadingVersionsSubscription} = useSubscription(
+        GET_VERSIONS_SUBSCRIPTION,
+        { variables: { spreadsheetId: "1" } } // todo get spreadsheet id from somewhere
+    );
+    
     const containerStyle = useMemo(() => ({ width: '100%', height: '100%' }), []);
     const gridStyle = useMemo(() => ({ height: '800px', width: '90%', padding: '50px' }), []);
     const [editModeColumnAndRow, setEditModeColumnAndRow] = useState<{column: string, row: number} | null>(null);
@@ -62,6 +83,32 @@ const App: FunctionComponent = (): React.ReactElement => {
         { field: 'B' },
         { field: 'C' },
     ]);
+
+    // VERSION SELECTOR
+    const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
+    const [selectedVersion, setSelectedVersion] = useState('');
+
+    const handleVersionChange = (event) => {
+        const newVersion = event.target.value;
+        setSelectedVersion(newVersion);
+        setIsConfirmationOpen(true); // Open the confirmation modal
+    };
+
+
+    const handleConfirmation = () => {
+        // Perform the desired action (e.g., console.log)
+        revertVersion({ variables: { spreadsheetId: "1", version: selectedVersion } });
+        setIsConfirmationOpen(false); // Close the confirmation modal
+        setSelectedVersion(''); // Reset the selected version
+
+    };
+
+    const handleCloseConfirmation = () => {
+        setIsConfirmationOpen(false); // Close the confirmation modal
+        setSelectedVersion(''); // Reset the selected version
+    };
+
+
 
     const defaultColDef = useMemo<ColDef>(() => {
         return {
@@ -98,6 +145,8 @@ const App: FunctionComponent = (): React.ReactElement => {
             console.log('dataSpreadsheet is null');
         }
     }, [data, dataSpreadsheet, editModeColumnAndRow]);
+
+
 
     useEffect(() => {
         if (data && dataSpreadsheet) {
@@ -197,15 +246,53 @@ const App: FunctionComponent = (): React.ReactElement => {
         columnHoverHighlight: true,
     };
 
-    if (loading || loadingSpreadsheet) return <p>loading...</p>;
+    if (loading || loadingSpreadsheet || loadingVersionsSubscription) return <p>loading...</p>;
     if (!data && !dataSpreadsheet) return <p>Not found</p>;
-
+    const theme = createTheme();
     return (
-        <div className="App" style={{ height: '100%' }}>
-            <header className="App-header" style={{ height: '50px' }}>
-                gql-sheets
-            </header>
-            <div style={containerStyle}>
+        <ThemeProvider theme={theme}>
+            <div className="App" style={{ height: '100%' }}>
+                <header className="App-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '70px' }}>
+                    <Typography variant="h6" style={{ color: '#FFF', paddingTop:'20px' }}>gql-sheets</Typography>
+
+                </header>
+
+                <div className="container">
+                    <div className="revert-section" style={{ marginLeft: 'auto', width: '300px', marginRight:'50px', padding:'20px' }}>
+                        <FormControl variant="outlined" style={{ width: 300 }} className="revert-select">
+                            {dataVersionsSubscription.getVersions && (
+                                <Select
+                                    value={selectedVersion || dataVersionsSubscription.getVersions[dataVersionsSubscription.getVersions.length - 1].version}
+
+                                    onChange={handleVersionChange}
+                                >
+                                    {dataVersionsSubscription.getVersions.map((version, index) => (
+                                        <MenuItem key={index} value={version.version}>
+                                            {new Date(version.version*1).toLocaleString()}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+
+                            )}
+                        </FormControl>
+                    </div>
+                    <div className="modal">
+                        <Dialog open={isConfirmationOpen} onClose={handleCloseConfirmation}>
+                            <DialogTitle>Confirmation</DialogTitle>
+                            <DialogContent>
+                                Are you sure you want to proceed? This will revert the spreadsheet to a previous version and lose all changes made since then.
+                            </DialogContent>
+                            <DialogActions>
+                                <Button onClick={handleCloseConfirmation} color="primary">
+                                    Cancel
+                                </Button>
+                                <Button onClick={handleConfirmation} color="primary" autoFocus>
+                                    OK
+                                </Button>
+                            </DialogActions>
+                        </Dialog>
+                    </div>
+
                 <div style={gridStyle} className="ag-theme-alpine">
                     <AgGridReact<Cell>
                         gridOptions={gridOptions}
@@ -216,8 +303,11 @@ const App: FunctionComponent = (): React.ReactElement => {
                     ></AgGridReact>
                 </div>
             </div>
-        </div>
+            </div>
+        </ThemeProvider>
     );
+
+
 };
 
 export default App;
