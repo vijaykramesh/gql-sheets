@@ -36,7 +36,7 @@
     "compile": "graphql-codegen",
     "watch": "graphql-codegen -w",
     "lintFix": "eslint . --ext .js,.jsx,.ts,.tsx --fix && prettier . --write",
-    "lint": "eslint . --ext .js,.jsx,.ts,.tsx && prettier . --check --ignore-path src/__generated__ "
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx && prettier . --check"
   },
   "proxy": "http://localhost:8080",
   "eslintConfig": {
