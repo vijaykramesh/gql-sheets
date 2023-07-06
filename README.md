@@ -22,6 +22,9 @@ The backend is in Golang using gqlgen and gorm, and the frontend is in React usi
 - `=A1` reference lookup
 - `=SUM(A1:A5)` sum of range
 - `=AVERAGE(A1:A5)` average of range
+- `=MAX(A1:A5)` max of range
+- `=MIN(A1:A5)` min of range
+- `=COUNT(A1:A5)` count of range
 
 ## Local Setup
 
