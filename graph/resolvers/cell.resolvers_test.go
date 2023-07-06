@@ -269,3 +269,92 @@ func TestMutationResolver_CreateCell(t *testing.T) {
 		assert.Nil(t, resp.CreateCell)
 	})
 }
+
+func TestCellResolver_Version(t *testing.T) {
+	t.Run("should return the string version of a cell's version", func(t *testing.T) {
+		mockDb, mock, _ := sqlmock.New()
+		dialector := postgres.New(postgres.Config{
+			Conn:       mockDb,
+			DriverName: "postgres",
+		})
+
+		mock.ExpectQuery(`SELECT \* FROM .+ WHERE id = \$1`).WithArgs("1").
+			WillReturnRows(sqlmock.NewRows([]string{"id", "version"}).AddRow(1, 123))
+
+		db, _ := gorm.Open(dialector, &gorm.Config{})
+		customCtx := &common.CustomContext{
+			Database: db,
+		}
+		srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &Resolver{}}))
+		ctx := common.CreateContext(customCtx, srv)
+
+		gql := client.New(ctx)
+		resp := struct {
+			GetCell struct {
+				Version string
+			}
+		}{}
+
+		q := `query getCellVersion {
+			getCell(id: "1") {
+				version
+			}
+		}`
+
+		gql.MustPost(q, &resp)
+
+		require.NotNil(t, resp.GetCell)
+		require.Equal(t, "123", resp.GetCell.Version)
+	})
+}
+func TestCellResolver_Spreadsheet(t *testing.T) {
+	t.Run("should get the spreadsheet of a cell", func(t *testing.T) {
+		mockDB, mock, _ := sqlmock.New()
+		dialector := postgres.New(postgres.Config{
+			Conn:       mockDB,
+			DriverName: "postgres",
+		})
+
+		// cell points to spreadsheet 1
+		mock.ExpectQuery(`SELECT \* FROM .+ WHERE id = \$1 .+`).WithArgs("1").WillReturnRows(sqlmock.NewRows([]string{"id", "raw_value", "row_index", "column_index", "spreadsheet_id"}).AddRow(1, "Test Cell", 1, 1, 1))
+
+		// spreadsheet 1 lookup
+		mock.ExpectQuery(`SELECT \* FROM .+ WHERE id = \$1 .+`).WithArgs("1").
+			WillReturnRows(sqlmock.NewRows([]string{"id", "name", "row_count", "column_count"}).AddRow(1, "Test Spreadsheet", 10, 5))
+		// post save lookup
+		mock.ExpectQuery(`SELECT \* FROM .+ WHERE id = \$1 .+`).WithArgs(1).
+			WillReturnRows(sqlmock.NewRows([]string{"id", "name", "row_count", "column_count"}).AddRow(1, "Test Spreadsheet", 10, 5))
+		db, _ := gorm.Open(dialector, &gorm.Config{})
+		customCtx := &common.CustomContext{
+			Database: db,
+		}
+		srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &Resolver{}}))
+		ctx := common.CreateContext(customCtx, srv)
+
+		gql := client.New(ctx)
+		resp := struct {
+			GetCell struct {
+				Spreadsheet struct {
+					ID   string
+					Name string
+				}
+			}
+		}{}
+
+		q := `query getCellSpreadsheet {
+			getCell(id: "1") {
+				spreadsheet {
+					id
+					name
+				}
+			}
+		}`
+
+		gql.MustPost(q, &resp)
+
+		require.NotNil(t, resp.GetCell)
+		require.NotNil(t, resp.GetCell.Spreadsheet)
+		require.Equal(t, "1", resp.GetCell.Spreadsheet.ID)
+		require.Equal(t, "Test Spreadsheet", resp.GetCell.Spreadsheet.Name)
+	})
+}
