@@ -10,7 +10,7 @@ import {
     Button,
     createTheme,
     ThemeProvider,
-    FormControl, InputLabel, MenuItem, Select, Typography
+    FormControl, InputLabel, MenuItem, Select, Typography, CircularProgress, Box
 } from '@mui/material';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
@@ -246,8 +246,31 @@ const App: FunctionComponent = (): React.ReactElement => {
         columnHoverHighlight: true,
     };
 
-    if (loading || loadingSpreadsheet || loadingVersionsSubscription) return <p>loading...</p>;
-    if (!data && !dataSpreadsheet) return <p>Not found</p>;
+    if (loading || loadingSpreadsheet || loadingVersionsSubscription) {
+        return (
+            <Box
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                height="100vh" // Adjust the height as needed
+            >
+                <CircularProgress />
+            </Box>
+        );
+    }
+
+    if (!data && !dataSpreadsheet) {
+        return (
+            <Box
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                height="100vh" // Adjust the height as needed
+            >
+                <Typography variant="body1">Not found</Typography>
+            </Box>
+        );
+    }
     const theme = createTheme();
     return (
         <ThemeProvider theme={theme}>
