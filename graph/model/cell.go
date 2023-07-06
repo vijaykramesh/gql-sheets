@@ -76,21 +76,39 @@ func (c *Cell) UpdateCellAndDependentCells(context *common.CustomContext, input 
 	c.RawValue = input.RawValue
 
 	var otherCells []Cell
-	err := context.Database.Clauses(exclause.NewWith("cte", context.Database.Table("cells").Select("column_index,row_index,max(version) as version").Group("column_index,row_index"))).Where("spreadsheet_id = ? AND id != ? AND version = (SELECT version FROM cte WHERE column_index = cells.column_index AND row_index = cells.row_index)", c.SpreadsheetID, c.ID).Find(&otherCells).Error
+	err := context.Database.Clauses(exclause.NewWith("cte", context.Database.Table("cells").Select("column_index,row_index,max(version) as version").Group("column_index,row_index"))).Where("spreadsheet_id = ? AND (column_index != ? OR row_index != ?) AND version = (SELECT version FROM cte WHERE column_index = cells.column_index AND row_index = cells.row_index)", c.SpreadsheetID, c.ColumnIndex, c.RowIndex).Find(&otherCells).Error
 	if err != nil {
 		return nil, fmt.Errorf("error getting cells: %v", err)
 	}
+	latestVersionSeenForColumnAndRowIndex := make(map[string]uint64)
+	for _, otherCell := range otherCells {
+		key := fmt.Sprintf("%d-%d", otherCell.ColumnIndex, otherCell.RowIndex)
+		if latestVersionSeenForColumnAndRowIndex[key] < otherCell.Version {
+			latestVersionSeenForColumnAndRowIndex[key] = otherCell.Version
+		}
+	}
 
-	c.ComputedValue, err = c.ComputeValueFromRaw(otherCells)
+	onlyLatestVersionOtherCells := make([]Cell, 0, len(otherCells))
+	for _, otherCell := range otherCells {
+		key := fmt.Sprintf("%d-%d", otherCell.ColumnIndex, otherCell.RowIndex)
+		if latestVersionSeenForColumnAndRowIndex[key] == otherCell.Version {
+			onlyLatestVersionOtherCells = append(onlyLatestVersionOtherCells, otherCell)
+		}
+	}
+	c.ComputedValue, err = c.ComputeValueFromRaw(onlyLatestVersionOtherCells)
 	c.Version = version
 	err = context.Database.Omit("id").Create(&c).Error
+	// select cell we just saved and set to c
+	newC := Cell{}
+	err = context.Database.Clauses(exclause.NewWith("cte", context.Database.Table("cells").Select("column_index,row_index,max(version) as version").Group("column_index,row_index"))).Where("spreadsheet_id = ? AND column_index = ? and row_index = ? AND version = (SELECT version FROM cte WHERE column_index = cells.column_index AND row_index = cells.row_index)", c.SpreadsheetID, c.ColumnIndex, c.RowIndex).First(&newC).Error
 	if err != nil {
 		return nil, fmt.Errorf("error updating cell: %v", err)
 	}
-	otherCells = append(otherCells, *c)
-	dependentCells, err := c.FindDependentCells(otherCells)
+
+	onlyLatestVersionOtherCells = append(onlyLatestVersionOtherCells, newC)
+	dependentCells, err := c.FindDependentCells(onlyLatestVersionOtherCells)
 	for _, dependentCell := range dependentCells {
-		dependentCell.ComputedValue, err = dependentCell.ComputeValueFromRaw(otherCells)
+		dependentCell.ComputedValue, err = dependentCell.ComputeValueFromRaw(onlyLatestVersionOtherCells)
 		if err != nil {
 			return nil, err
 		}
@@ -102,7 +120,7 @@ func (c *Cell) UpdateCellAndDependentCells(context *common.CustomContext, input 
 
 		// todo change this to recurse and support infinite reference depth
 		filteredOtherCells := []Cell{}
-		for _, otherCell := range otherCells {
+		for _, otherCell := range onlyLatestVersionOtherCells {
 			if otherCell.ID != dependentCell.ID {
 				filteredOtherCells = append(filteredOtherCells, otherCell)
 			}
