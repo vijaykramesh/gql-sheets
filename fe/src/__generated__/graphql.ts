@@ -23,12 +23,14 @@ export type Cell = {
   rawValue: Scalars['String']['output'];
   rowIndex: Scalars['Int']['output'];
   spreadsheet: Spreadsheet;
+  version: Scalars['String']['output'];
 };
 
 export type Mutation = {
   __typename?: 'Mutation';
   createCell: Cell;
   createSpreadsheet: Spreadsheet;
+  revertSpreadsheet: Spreadsheet;
   updateCell: Cell;
   updateCellBySpreadsheetIdColumnAndRow: Cell;
   updateSpreadsheet: Spreadsheet;
@@ -42,6 +44,12 @@ export type MutationCreateCellArgs = {
 
 export type MutationCreateSpreadsheetArgs = {
   input: NewSpreadsheet;
+};
+
+
+export type MutationRevertSpreadsheetArgs = {
+  id: Scalars['String']['input'];
+  version: Scalars['String']['input'];
 };
 
 
@@ -83,6 +91,7 @@ export type Query = {
   getCell: Cell;
   getCellsBySpreadsheetId: Array<Cell>;
   getSpreadsheet: Spreadsheet;
+  getVersions: Array<Version>;
   spreadsheets: Array<Spreadsheet>;
 };
 
@@ -101,6 +110,11 @@ export type QueryGetSpreadsheetArgs = {
   id: Scalars['String']['input'];
 };
 
+
+export type QueryGetVersionsArgs = {
+  id: Scalars['String']['input'];
+};
+
 export type Spreadsheet = {
   __typename?: 'Spreadsheet';
   columnCount: Scalars['Int']['output'];
@@ -112,11 +126,17 @@ export type Spreadsheet = {
 export type Subscription = {
   __typename?: 'Subscription';
   getCellsBySpreadsheetId: Array<Cell>;
+  getVersions: Array<Version>;
 };
 
 
 export type SubscriptionGetCellsBySpreadsheetIdArgs = {
   spreadsheetId: Scalars['String']['input'];
+};
+
+
+export type SubscriptionGetVersionsArgs = {
+  id: Scalars['String']['input'];
 };
 
 export type UpdateCell = {
@@ -127,4 +147,9 @@ export type UpdateSpreadsheet = {
   columnCount?: InputMaybe<Scalars['Int']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
   rowCount?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type Version = {
+  __typename?: 'Version';
+  version: Scalars['String']['output'];
 };

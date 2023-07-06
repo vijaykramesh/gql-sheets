@@ -7,11 +7,11 @@ package resolvers
 import (
 	"context"
 	"fmt"
-	"strconv"
-
 	"github.com/vijaykramesh/gql-sheets/graph/common"
 	"github.com/vijaykramesh/gql-sheets/graph/generated"
 	"github.com/vijaykramesh/gql-sheets/graph/model"
+	"strconv"
+	"time"
 )
 
 // CreateSpreadsheet is the resolver for the createSpreadsheet field.
@@ -56,6 +56,23 @@ func (r *mutationResolver) UpdateSpreadsheet(ctx context.Context, id string, inp
 	return &spreadsheet, nil
 }
 
+// RevertSpreadsheet is the resolver for the revertSpreadsheet field.
+func (r *mutationResolver) RevertSpreadsheet(ctx context.Context, id string, version string) (*model.Spreadsheet, error) {
+	context := common.GetContext(ctx)
+	var spreadsheet model.Spreadsheet
+	err := context.Database.Where("id = ?", id).First(&spreadsheet).Error
+	if err != nil {
+		return nil, fmt.Errorf("error getting spreadsheet: %v", err)
+	}
+	// delete all cells with version > version
+	err = context.Database.Where("spreadsheet_id = ? AND version > ?", id, version).Delete(&model.Cell{}).Error
+	if err != nil {
+		return nil, fmt.Errorf("error deleting cells: %v", err)
+	}
+	// return
+	return &spreadsheet, nil
+}
+
 // Spreadsheets is the resolver for the spreadsheets field.
 func (r *queryResolver) Spreadsheets(ctx context.Context) ([]*model.Spreadsheet, error) {
 	context := common.GetContext(ctx)
@@ -78,6 +95,29 @@ func (r *queryResolver) GetSpreadsheet(ctx context.Context, id string) (*model.S
 	return &spreadsheet, nil
 }
 
+// GetVersions is the resolver for the getVersions field.
+func (r *queryResolver) GetVersions(ctx context.Context, id string) ([]*model.Version, error) {
+	context := common.GetContext(ctx)
+	var versions []*model.Version
+	var cells []*model.Cell
+	err := context.Database.Where("spreadsheet_id = ?", id).Find(&cells).Error
+	if err != nil {
+		return nil, fmt.Errorf("error getting cells: %v", err)
+	}
+	seenVersions := make(map[uint64]bool)
+	for _, cell := range cells {
+		if _, ok := seenVersions[cell.Version]; ok {
+			continue
+		}
+		seenVersions[cell.Version] = true
+		version := &model.Version{
+			Version: strconv.FormatUint(cell.Version, 10),
+		}
+		versions = append(versions, version)
+	}
+	return versions, nil
+}
+
 // ID is the resolver for the id field.
 func (r *spreadsheetResolver) ID(ctx context.Context, obj *model.Spreadsheet) (string, error) {
 	// TODO: this might be dumb, we maybe should just read it off obj
@@ -88,6 +128,36 @@ func (r *spreadsheetResolver) ID(ctx context.Context, obj *model.Spreadsheet) (s
 		return "", fmt.Errorf("error getting spreadsheet: %v", err)
 	}
 	return strconv.FormatUint(uint64(spreadsheet.ID), 10), nil
+}
+
+// GetVersions is the resolver for the getVersions field.
+func (r *subscriptionResolver) GetVersions(ctx context.Context, id string) (<-chan []*model.Version, error) {
+	ch := make(chan []*model.Version)
+	go func() {
+		for {
+			context := common.GetContext(ctx)
+			time.Sleep(1 * time.Second)
+			var versions []*model.Version
+			var cells []*model.Cell
+			err := context.Database.Where("spreadsheet_id = ?", id).Find(&cells).Error
+			if err != nil {
+				panic(fmt.Errorf("error getting cells: %v", err))
+			}
+			seenVersions := make(map[uint64]bool)
+			for _, cell := range cells {
+				if _, ok := seenVersions[cell.Version]; ok {
+					continue
+				}
+				seenVersions[cell.Version] = true
+				version := &model.Version{
+					Version: strconv.FormatUint(cell.Version, 10),
+				}
+				versions = append(versions, version)
+			}
+			ch <- versions
+		}
+	}()
+	return ch, nil
 }
 
 // Spreadsheet returns generated.SpreadsheetResolver implementation.

@@ -99,7 +99,7 @@ func TestQueryResolver_GetCellsBySpreadsheetID(t *testing.T) {
 			Conn:       mockDB,
 			DriverName: "postgres",
 		})
-		mock.ExpectQuery(`SELECT \* FROM .+ WHERE spreadsheet_id = \$1`).WithArgs("1").
+		mock.ExpectQuery(`SELECT \* FROM .+ WHERE \(spreadsheet_id = \$1`).WithArgs("1").
 			WillReturnRows(sqlmock.NewRows([]string{"id", "raw_value", "row_index", "column_index", "spreadsheet_id"}).
 				AddRow(1, "Test Cell 1", 0, 0, 1).
 				AddRow(2, "Test Cell 2", 0, 1, 1).
@@ -216,7 +216,7 @@ func TestMutationResolver_CreateCell(t *testing.T) {
 
 		mock.ExpectBegin()
 		mock.ExpectQuery(`INSERT INTO "cells"`).
-			WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), "Test Cell", sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).
+			WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), "Test Cell", sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).
 			WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
 		mock.ExpectCommit()
 		// expect panic here

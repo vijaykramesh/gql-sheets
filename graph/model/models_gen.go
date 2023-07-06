@@ -24,3 +24,7 @@ type UpdateSpreadsheet struct {
 	RowCount    *int    `json:"rowCount,omitempty"`
 	ColumnCount *int    `json:"columnCount,omitempty"`
 }
+
+type Version struct {
+	Version string `json:"version"`
+}
