@@ -51,7 +51,7 @@ Run local Prometheus + Grafana via [docker-compose](https://github.com/ninadingo
 
 Gorm gives us a number of neat metrics out of the box:
 
-[TODO Screenshot]
+<img width="2160" alt="Screen Shot 2023-07-05 at 5 29 12 PM" src="https://github.com/vijaykramesh/gql-sheets/assets/556288/76bc68f0-cebe-4eae-8542-68dd03a561ba">
 
 ## Tests
 Run the following to run tests & coverage locally (for the golang backend)
