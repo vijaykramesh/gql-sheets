@@ -18,6 +18,7 @@ type Cell struct {
 	ComputedValue string       `json:"computedValue,omitempty"`
 	RowIndex      int          `json:"rowIndex"`
 	ColumnIndex   int          `json:"columnIndex"`
+	Version       int          `json:"version"`
 }
 
 func (c *Cell) parseRawValue() ([]efp.Token, error) {

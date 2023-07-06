@@ -31,6 +31,11 @@ func (r *cellResolver) Spreadsheet(ctx context.Context, obj *model.Cell) (*model
 	return &spreadsheet, nil
 }
 
+// Version is the resolver for the version field.
+func (r *cellResolver) Version(ctx context.Context, obj *model.Cell) (int, error) {
+	return int(obj.Version), nil
+}
+
 // CreateCell is the resolver for the createCell field.
 func (r *mutationResolver) CreateCell(ctx context.Context, input model.NewCell) (*model.Cell, error) {
 	context := common.GetContext(ctx)
@@ -74,33 +79,15 @@ func (r *mutationResolver) UpdateCell(ctx context.Context, id string, input mode
 		return nil, err
 	}
 
-	cell.RawValue = input.RawValue
-	// TODO: validate & run any formula & update dependent cells
-	err = context.Database.Save(&cell).Error
-	if err != nil {
-		return nil, fmt.Errorf("error updating cell: %v", err)
-	}
-	return &cell, nil
+	return updateCellAndDependentCells(cell, context, input)
+
 }
 
-// UpdateCellBySpreadsheetIDColumnAndRow is the resolver for the updateCellBySpreadsheetIdColumnAndRow field.
-func (r *mutationResolver) UpdateCellBySpreadsheetIDColumnAndRow(ctx context.Context, spreadsheetID string, columnIndex int, rowIndex int, input model.UpdateCell) (*model.Cell, error) {
-	context := common.GetContext(ctx)
-	var cell model.Cell
-	err := context.Database.Where("spreadsheet_id = ? AND column_index = ? AND row_index = ?", spreadsheetID, columnIndex, rowIndex).First(&cell).Error
-	if err != nil {
-		// create a cell if it doesn't exist
-		cell = model.Cell{
-			SpreadsheetID: spreadsheetID,
-			ColumnIndex:   columnIndex,
-			RowIndex:      rowIndex,
-		}
-	}
-	// TODO do we need to validate column_index & row_index since they were used in the lookup?
+func updateCellAndDependentCells(cell model.Cell, context *common.CustomContext, input model.UpdateCell) (*model.Cell, error) {
 	cell.RawValue = input.RawValue
 
 	var otherCells []model.Cell
-	err = context.Database.Where("spreadsheet_id = ? and id != ?", spreadsheetID, cell.ID).Find(&otherCells).Error
+	err := context.Database.Where("spreadsheet_id = ? and id != ?", cell.SpreadsheetID, cell.ID).Find(&otherCells).Error
 	if err != nil {
 		return nil, fmt.Errorf("error getting cells: %v", err)
 	}
@@ -142,6 +129,24 @@ func (r *mutationResolver) UpdateCellBySpreadsheetIDColumnAndRow(ctx context.Con
 	}
 
 	return &cell, nil
+}
+
+// UpdateCellBySpreadsheetIDColumnAndRow is the resolver for the updateCellBySpreadsheetIdColumnAndRow field.
+func (r *mutationResolver) UpdateCellBySpreadsheetIDColumnAndRow(ctx context.Context, spreadsheetID string, columnIndex int, rowIndex int, input model.UpdateCell) (*model.Cell, error) {
+	context := common.GetContext(ctx)
+	var cell model.Cell
+	err := context.Database.Where("spreadsheet_id = ? AND column_index = ? AND row_index = ?", spreadsheetID, columnIndex, rowIndex).First(&cell).Error
+	if err != nil {
+		// create a cell if it doesn't exist
+		cell = model.Cell{
+			SpreadsheetID: spreadsheetID,
+			ColumnIndex:   columnIndex,
+			RowIndex:      rowIndex,
+		}
+	}
+
+	return updateCellAndDependentCells(cell, context, input)
+
 }
 
 // Cells is the resolver for the cells field.
