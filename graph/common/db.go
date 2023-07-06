@@ -5,6 +5,7 @@ import (
 	extraClausePlugin "github.com/WinterYukky/gorm-extra-clause-plugin"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 	"gorm.io/plugin/prometheus"
 	"os"
 )
@@ -20,7 +21,7 @@ func InitDb() (*gorm.DB, error) {
 
 	// connect to db
 	dsn := "host=" + host + " user=" + user + " password=" + password + " dbname=" + dbname + " port=" + port + " sslmode=disable"
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{Logger: logger.Default.LogMode(logger.Info)})
 
 	db.Use(prometheus.New(prometheus.Config{
 		DBName:          "db1", // `DBName` as metrics label

@@ -122,11 +122,12 @@ func (r *queryResolver) GetCell(ctx context.Context, id string) (*model.Cell, er
 	return &cell, nil
 }
 
+// TODO: both these resolvers get run OFTEN but majority of the data doesn't change
+// use a data loader to cache it in memory and then purge the cache when updates happen
 // GetCellsBySpreadsheetID is the resolver for the getCellsBySpreadsheetId field.
 func (r *queryResolver) GetCellsBySpreadsheetID(ctx context.Context, spreadsheetID string) ([]*model.Cell, error) {
 	context := common.GetContext(ctx)
 	var cells []*model.Cell
-
 	err := context.Database.Clauses(exclause.NewWith("cte", context.Database.Table("cells").Select("column_index,row_index,max(version) as version").Where("deleted_at IS NULL").Group("column_index,row_index"))).Where("spreadsheet_id = ? AND version = (SELECT version FROM cte WHERE column_index = cells.column_index AND row_index = cells.row_index)", spreadsheetID).Find(&cells).Error
 	if err != nil {
 		return nil, fmt.Errorf("error getting cells: %v", err)
