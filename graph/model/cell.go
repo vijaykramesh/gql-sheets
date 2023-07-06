@@ -137,6 +137,27 @@ func (c *Cell) ComputeValueFromRaw(otherCells []Cell) (string, error) {
 	return c.RawValue, nil
 }
 
+func buildLatestVersionSeenForColumnAndRowIndex(otherCells []Cell) map[string]uint64 {
+	latestVersionSeenForColumnAndRowIndex := make(map[string]uint64)
+	for _, otherCell := range otherCells {
+		key := fmt.Sprintf("%d-%d", otherCell.ColumnIndex, otherCell.RowIndex)
+		if latestVersionSeenForColumnAndRowIndex[key] < otherCell.Version {
+			latestVersionSeenForColumnAndRowIndex[key] = otherCell.Version
+		}
+	}
+	return latestVersionSeenForColumnAndRowIndex
+}
+
+func buildOnlyLatestVersionOtherCells(otherCells []Cell, latestVersionSeenForColumnAndRowIndex map[string]uint64) []Cell {
+	onlyLatestVersionOtherCells := make([]Cell, 0, len(otherCells))
+	for _, otherCell := range otherCells {
+		key := fmt.Sprintf("%d-%d", otherCell.ColumnIndex, otherCell.RowIndex)
+		if latestVersionSeenForColumnAndRowIndex[key] == otherCell.Version {
+			onlyLatestVersionOtherCells = append(onlyLatestVersionOtherCells, otherCell)
+		}
+	}
+	return onlyLatestVersionOtherCells
+}
 func (c *Cell) UpdateCellAndDependentCells(context *common.CustomContext, input UpdateCell) (*Cell, error) {
 	version := uint64(time.Now().UnixMilli())
 	c.RawValue = input.RawValue
@@ -146,21 +167,9 @@ func (c *Cell) UpdateCellAndDependentCells(context *common.CustomContext, input 
 	if err != nil {
 		return nil, fmt.Errorf("error getting cells: %v", err)
 	}
-	latestVersionSeenForColumnAndRowIndex := make(map[string]uint64)
-	for _, otherCell := range otherCells {
-		key := fmt.Sprintf("%d-%d", otherCell.ColumnIndex, otherCell.RowIndex)
-		if latestVersionSeenForColumnAndRowIndex[key] < otherCell.Version {
-			latestVersionSeenForColumnAndRowIndex[key] = otherCell.Version
-		}
-	}
+	latestVersionSeenForColumnAndRowIndex := buildLatestVersionSeenForColumnAndRowIndex(otherCells)
+	onlyLatestVersionOtherCells := buildOnlyLatestVersionOtherCells(otherCells, latestVersionSeenForColumnAndRowIndex)
 
-	onlyLatestVersionOtherCells := make([]Cell, 0, len(otherCells))
-	for _, otherCell := range otherCells {
-		key := fmt.Sprintf("%d-%d", otherCell.ColumnIndex, otherCell.RowIndex)
-		if latestVersionSeenForColumnAndRowIndex[key] == otherCell.Version {
-			onlyLatestVersionOtherCells = append(onlyLatestVersionOtherCells, otherCell)
-		}
-	}
 	c.ComputedValue, err = c.ComputeValueFromRaw(onlyLatestVersionOtherCells)
 	c.Version = version
 	err = context.Database.Omit("id").Create(&c).Error
