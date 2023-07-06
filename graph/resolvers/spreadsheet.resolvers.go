@@ -98,23 +98,13 @@ func (r *queryResolver) GetSpreadsheet(ctx context.Context, id string) (*model.S
 // GetVersions is the resolver for the getVersions field.
 func (r *queryResolver) GetVersions(ctx context.Context, id string) ([]*model.Version, error) {
 	context := common.GetContext(ctx)
-	var versions []*model.Version
 	var cells []*model.Cell
 	err := context.Database.Where("spreadsheet_id = ?", id).Find(&cells).Error
 	if err != nil {
 		return nil, fmt.Errorf("error getting cells: %v", err)
 	}
-	seenVersions := make(map[uint64]bool)
-	for _, cell := range cells {
-		if _, ok := seenVersions[cell.Version]; ok {
-			continue
-		}
-		seenVersions[cell.Version] = true
-		version := &model.Version{
-			Version: strconv.FormatUint(cell.Version, 10),
-		}
-		versions = append(versions, version)
-	}
+	versions := buildLatestVersionSlice(cells)
+
 	return versions, nil
 }
 
@@ -137,27 +127,31 @@ func (r *subscriptionResolver) GetVersions(ctx context.Context, id string) (<-ch
 		for {
 			context := common.GetContext(ctx)
 			time.Sleep(1 * time.Second)
-			var versions []*model.Version
 			var cells []*model.Cell
 			err := context.Database.Where("spreadsheet_id = ?", id).Find(&cells).Error
 			if err != nil {
 				panic(fmt.Errorf("error getting cells: %v", err))
 			}
-			seenVersions := make(map[uint64]bool)
-			for _, cell := range cells {
-				if _, ok := seenVersions[cell.Version]; ok {
-					continue
-				}
-				seenVersions[cell.Version] = true
-				version := &model.Version{
-					Version: strconv.FormatUint(cell.Version, 10),
-				}
-				versions = append(versions, version)
-			}
+			versions := buildLatestVersionSlice(cells)
 			ch <- versions
 		}
 	}()
 	return ch, nil
+}
+func buildLatestVersionSlice(cells []*model.Cell) []*model.Version {
+	seenVersions := make(map[uint64]bool)
+	var versions []*model.Version
+	for _, cell := range cells {
+		if _, ok := seenVersions[cell.Version]; ok {
+			continue
+		}
+		seenVersions[cell.Version] = true
+		version := &model.Version{
+			Version: strconv.FormatUint(cell.Version, 10),
+		}
+		versions = append(versions, version)
+	}
+	return versions
 }
 
 // Spreadsheet returns generated.SpreadsheetResolver implementation.
