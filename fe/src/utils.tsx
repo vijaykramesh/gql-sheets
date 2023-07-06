@@ -13,6 +13,7 @@ export function columnCodeFromColumnIndex(columnIndex: number): string {
     while (columnIndex >= 0) {
         const remainder = columnIndex % 26;
         column = String.fromCharCode(remainder + 65) + column;
+        // eslint-disable-next-line no-param-reassign
         columnIndex = Math.floor(columnIndex / 26) - 1;
 
         if (columnIndex < 0) {
