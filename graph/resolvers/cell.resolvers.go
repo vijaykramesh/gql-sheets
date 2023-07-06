@@ -127,7 +127,7 @@ func (r *queryResolver) GetCellsBySpreadsheetID(ctx context.Context, spreadsheet
 	context := common.GetContext(ctx)
 	var cells []*model.Cell
 
-	err := context.Database.Clauses(exclause.NewWith("cte", context.Database.Table("cells").Select("column_index,row_index,max(version) as version").Group("column_index,row_index"))).Where("spreadsheet_id = ? AND version = (SELECT version FROM cte WHERE column_index = cells.column_index AND row_index = cells.row_index)", spreadsheetID).Find(&cells).Error
+	err := context.Database.Clauses(exclause.NewWith("cte", context.Database.Table("cells").Select("column_index,row_index,max(version) as version").Where("deleted_at IS NULL").Group("column_index,row_index"))).Where("spreadsheet_id = ? AND version = (SELECT version FROM cte WHERE column_index = cells.column_index AND row_index = cells.row_index)", spreadsheetID).Find(&cells).Error
 	if err != nil {
 		return nil, fmt.Errorf("error getting cells: %v", err)
 	}
@@ -142,7 +142,7 @@ func (r *subscriptionResolver) GetCellsBySpreadsheetID(ctx context.Context, spre
 			context := common.GetContext(ctx)
 			time.Sleep(1 * time.Second)
 			var cells []*model.Cell
-			err := context.Database.Clauses(exclause.NewWith("cte", context.Database.Table("cells").Select("column_index,row_index,max(version) as version").Group("column_index,row_index"))).Where("spreadsheet_id = ? AND version = (SELECT version FROM cte WHERE column_index = cells.column_index AND row_index = cells.row_index)", spreadsheetID).Find(&cells).Error
+			err := context.Database.Clauses(exclause.NewWith("cte", context.Database.Table("cells").Select("column_index,row_index,max(version) as version").Where("deleted_at IS NULL").Group("column_index,row_index"))).Where("spreadsheet_id = ? AND version = (SELECT version FROM cte WHERE column_index = cells.column_index AND row_index = cells.row_index)", spreadsheetID).Find(&cells).Error
 			if err != nil {
 				panic(fmt.Errorf("error getting cells: %v", err))
 			}
