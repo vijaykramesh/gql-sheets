@@ -42,6 +42,8 @@ See fe/README.md for more instructions on how to run the frontend.
 
 tl;dr: `cd fe && yarn && yarn start`
 
+You should run eslint before submitted a PR, `yarn lint` will run eslint and prettier.
+
 ### Prometheus
 Run local Prometheus + Grafana via [docker-compose](https://github.com/ninadingole/docker-compose-stacks/tree/master/prometheus-grafana) and configure it to scrape the backend service.
 
