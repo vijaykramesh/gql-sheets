@@ -1,8 +1,8 @@
-import {ColDef} from "ag-grid-community";
-import {Cell} from "./__generated__/graphql";
-import ReactMarkdown from "react-markdown";
+import { ColDef } from 'ag-grid-community';
+import { Cell } from './__generated__/graphql';
+import ReactMarkdown from 'react-markdown';
 import React from 'react';
-import {renderToStaticMarkup} from "react-dom/server";
+import { renderToStaticMarkup } from 'react-dom/server';
 
 export function columnCodeFromColumnIndex(columnIndex: number): string {
     if (columnIndex < 0) {
@@ -36,19 +36,17 @@ export function generateColumnFields(maxColumnIndex: number): ColDef[] {
                 }
 
                 const cellData = params.data[columnCode];
-                const rawCellValue = params.value
+                const rawCellValue = params.value;
                 if (cellData) {
                     if (cellData.editMode && cellData.editMode === 0) {
                         return cellData.rawValue;
-                    } else {
-                        const markdownContent = renderToStaticMarkup(<ReactMarkdown>{cellData.computedValue}</ReactMarkdown>);
-                        return `<span dangerouslySetInnerHTML={{ __html: ${markdownContent} }} />`;
-
-                        // return cellData.computedValue;
                     }
-                } else {
-                    return rawCellValue;
+                    const markdownContent = renderToStaticMarkup(<ReactMarkdown>{cellData.computedValue}</ReactMarkdown>);
+                    return `<span dangerouslySetInnerHTML={{ __html: ${markdownContent} }} />`;
+
+                    // return cellData.computedValue;
                 }
+                return rawCellValue;
             },
             valueParser: (params) => {
                 return params.newValue;
@@ -57,12 +55,11 @@ export function generateColumnFields(maxColumnIndex: number): ColDef[] {
                 if (params.data[columnCode]) {
                     const markdownContent = renderToStaticMarkup(<ReactMarkdown>{params.data[columnCode].computedValue}</ReactMarkdown>);
 
-                    return params.data[columnCode].editMode !== 0
-                        ? `<span dangerouslySetInnerHTML={{ __html: ${markdownContent} }} />`
-                        : params.data[columnCode].rawValue;
-                } else {
-                    return '';
+                    return params.data[columnCode].editMode !== 0 ?
+                        `<span dangerouslySetInnerHTML={{ __html: ${markdownContent} }} />` :
+                        params.data[columnCode].rawValue;
                 }
+                return '';
             },
             valueSetter: (params) => {
                 if (params.data[columnCode]) {
@@ -83,39 +80,45 @@ export function convertCellsToRowData(data: Cell[], rowCount: number, editModeCo
     column: string;
     row: number
 } | null): { [key: string]: any }[] {
-    const maxRowIndex = Math.max(rowCount - 1, Math.max(...data.map((cell) => cell.rowIndex)))
-    const maxColumnIndex = Math.max(...data.map((cell) => cell.columnIndex));
+    const maxRowIndex = Math.max(rowCount - 1, Math.max(...data.map((cell) => {
+        return cell.rowIndex;
+    })));
+    const maxColumnIndex = Math.max(...data.map((cell) => {
+        return cell.columnIndex;
+    }));
 
     const result: { [key: string]: object }[] = [];
     for (let i = 0; i <= maxRowIndex; i++) {
         const row: { [key: string]: any } = {};
 
         for (let j = 0; j <= maxColumnIndex; j++) {
-            const cell = data.find((c) => c.rowIndex === i && c.columnIndex === j);
+            const cell = data.find((c) => {
+                return c.rowIndex === i && c.columnIndex === j;
+            });
             const columnCode = columnCodeFromColumnIndex(j);
-            let editMode = 0
+            let editMode = 0;
             if (editModeColumnAndRow && editModeColumnAndRow.row === i && editModeColumnAndRow.column === columnCode) {
                 editMode = 1;
             }
-            row[columnCode] = cell
-                ? {
+            row[columnCode] = cell ?
+                {
                     rowIndex: (i + 1).toString(),
                     rawValue: cell.rawValue.toString(),
                     computedValue: (cell.computedValue || '').toString(),
                     editMode: editMode,
-                }
-                : {
+                } :
+                {
                     rowIndex: (i + 1).toString(),
                     rawValue: '',
                     computedValue: '',
                     editMode: 0,
                 };
         }
-        row['rowIndex'] = (i + 1).toString();
+        row.rowIndex = (i + 1).toString();
         result.push(row);
     }
     const newRow: { [key: string]: any } = {};
-    newRow['rowIndex'] = (maxRowIndex + 2).toString();
+    newRow.rowIndex = (maxRowIndex + 2).toString();
     result.push(newRow);
     return result;
 }

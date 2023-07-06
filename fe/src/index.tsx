@@ -4,20 +4,18 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
-import {ApolloClient, ApolloProvider, HttpLink, InMemoryCache, split} from '@apollo/client';
+import { ApolloClient, ApolloProvider, HttpLink, InMemoryCache, split } from '@apollo/client';
 
 import { GraphQLWsLink } from '@apollo/client/link/subscriptions';
 
 import { createClient } from 'graphql-ws';
-import {getMainDefinition} from "@apollo/client/utilities";
+import { getMainDefinition } from '@apollo/client/utilities';
 
 
 const httpLink = new HttpLink({
 
     uri: 'http://localhost:8080/query'
 });
-
-
 
 
 const wsLink = new GraphQLWsLink(createClient({
@@ -29,7 +27,6 @@ const wsLink = new GraphQLWsLink(createClient({
 const splitLink = split(
 
     ({ query }) => {
-
         const definition = getMainDefinition(query);
 
         return (
@@ -39,7 +36,6 @@ const splitLink = split(
             definition.operation === 'subscription'
 
         );
-
     },
 
     wsLink,

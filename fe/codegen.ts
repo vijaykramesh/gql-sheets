@@ -3,29 +3,29 @@ import { CodegenConfig } from '@graphql-codegen/cli';
 
 const config: CodegenConfig = {
 
-  schema: 'http://localhost:8080/query',
+    schema: 'http://localhost:8080/query',
 
-  documents: ['src/**/*.tsx'],
+    documents: [ 'src/**/*.tsx' ],
 
-  generates: {
+    generates: {
 
-    './src/__generated__/': {
+        './src/__generated__/': {
 
-      preset: 'client',
+            preset: 'client',
 
-      plugins: [],
+            plugins: [],
 
-      presetConfig: {
+            presetConfig: {
 
-        gqlTagName: 'gql',
+                gqlTagName: 'gql',
 
-      }
+            }
 
-    }
+        }
 
-  },
+    },
 
-  ignoreNoDocuments: true,
+    ignoreNoDocuments: true,
 
 };
 
