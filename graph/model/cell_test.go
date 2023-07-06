@@ -319,6 +319,82 @@ func TestAverageRange(t *testing.T) {
 		t.Errorf("Expected result: %s, but got: %s", expected, result)
 	}
 }
+func TestMinRange(t *testing.T) {
+	tokens := []efp.Token{
+		{TType: "Function", TSubType: "Start", TValue: "MAX"},
+		{TType: "Operand", TSubType: "Range", TValue: "A1:A4"},
+		{TType: "Function", TSubType: "Stop", TValue: ""},
+	}
+
+	otherCells := []Cell{
+		{ColumnIndex: 0, RowIndex: 0, ComputedValue: "10"},
+		{ColumnIndex: 0, RowIndex: 1, ComputedValue: "20"},
+		{ColumnIndex: 0, RowIndex: 2, ComputedValue: "30"},
+		{ColumnIndex: 0, RowIndex: 3, ComputedValue: "15"},
+		{ColumnIndex: 1, RowIndex: 1, ComputedValue: "40"},
+	}
+
+	result, err := minRange(tokens, otherCells)
+	if err != nil {
+		t.Errorf("Error occurred: %s", err.Error())
+	}
+
+	expected := "10"
+	if result != expected {
+		t.Errorf("Expected result: %s, but got: %s", expected, result)
+	}
+}
+
+func TestMaxRange(t *testing.T) {
+	tokens := []efp.Token{
+		{TType: "Function", TSubType: "Start", TValue: "MAX"},
+		{TType: "Operand", TSubType: "Range", TValue: "A1:A4"},
+		{TType: "Function", TSubType: "Stop", TValue: ""},
+	}
+
+	otherCells := []Cell{
+		{ColumnIndex: 0, RowIndex: 0, ComputedValue: "10"},
+		{ColumnIndex: 0, RowIndex: 1, ComputedValue: "20"},
+		{ColumnIndex: 0, RowIndex: 2, ComputedValue: "30"},
+		{ColumnIndex: 0, RowIndex: 3, ComputedValue: "15"},
+		{ColumnIndex: 1, RowIndex: 1, ComputedValue: "40"},
+	}
+
+	result, err := maxRange(tokens, otherCells)
+	if err != nil {
+		t.Errorf("Error occurred: %s", err.Error())
+	}
+
+	expected := "30"
+	if result != expected {
+		t.Errorf("Expected result: %s, but got: %s", expected, result)
+	}
+}
+
+func TestCountRange(t *testing.T) {
+	tokens := []efp.Token{
+		{TType: "Function", TSubType: "Start", TValue: "COUNT"},
+		{TType: "Operand", TSubType: "Range", TValue: "A1:A3"},
+		{TType: "Function", TSubType: "Stop", TValue: ""},
+	}
+
+	otherCells := []Cell{
+		{ColumnIndex: 0, RowIndex: 0, ComputedValue: "10"},
+		{ColumnIndex: 0, RowIndex: 1, ComputedValue: "20"},
+		{ColumnIndex: 0, RowIndex: 2, ComputedValue: "30"},
+		{ColumnIndex: 1, RowIndex: 1, ComputedValue: "40"},
+	}
+
+	result, err := countRange(tokens, otherCells)
+	if err != nil {
+		t.Errorf("Error occurred: %s", err.Error())
+	}
+
+	expected := "3"
+	if result != expected {
+		t.Errorf("Expected result: %s, but got: %s", expected, result)
+	}
+}
 
 func TestCheckIfCellInRange(t *testing.T) {
 	c := &Cell{
